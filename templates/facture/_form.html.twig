@@ -1,0 +1,29 @@
+    {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+    <hr/>
+        {{ form_label(form.numFacture) }}
+        {{ form_widget(form.numFacture, {'attr': {'class': 'form-control', 'readonly': 'readonly'}}) }}
+        {{ form_errors(form.numFacture) }}
+
+        {{ form_label(form.client) }}
+        {{ form_widget(form.client, {'attr': {'class': 'form-control'}}) }}
+        {{ form_errors(form.client) }}
+
+         {{ form_label(form.dateFacturation) }}
+        {{ form_widget(form.dateFacturation)  }}
+        {{ form_errors(form.dateFacturation) }}
+
+        {{ form_label(form.dateEcheance) }}
+        {{ form_widget(form.dateEcheance)  }}
+        {{ form_errors(form.dateEcheance) }}
+        
+   
+
+
+        {# {{ form_label(form.etat) }}
+        {{ form_widget(form.etat, {'attr': {'class': 'form-control'}}) }}
+        {{ form_errors(form.etat) }} #}
+
+    <hr/>
+        <button class="btn btn-success">{{ button_label|default('Save') }}</button>
+
+    {{ form_end(form) }}

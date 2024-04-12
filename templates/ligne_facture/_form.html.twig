@@ -1,0 +1,157 @@
+{{ form_start(form, {'attr': {'id': 'formadd', 'novalidate': 'novalidate'}}) }}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+<h2>Facture</h2>
+
+<hr/>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="form-group">
+            {{ form_label(facture.numFacture) }}
+            {{ form_widget(facture.numFacture, {'attr': {'class': 'form-control', 'readonly': 'readonly'}}) }}
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="form-group">
+            {{ form_label(facture.dateFacturation) }}
+            {{ form_widget(facture.dateFacturation) }}
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="form-group">
+            {{ form_label(facture.dateEcheance) }}
+            {{ form_widget(facture.dateEcheance) }}
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="form-group">
+            {{ form_label(facture.client) }}
+            {{ form_widget(facture.client, {'attr': {'class': 'form-control', 'readonly': 'readonly'}}) }}
+        </div>
+    </div>
+
+</div>
+
+<h2>Ajouter Services</h2>
+<hr/>
+ <div class="row align-items-end">
+    <div class="col-md-4">
+        <div class="form-group">
+            {{ form_label(form.service) }}
+            {{ form_widget(form.service, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.service) }}
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="form-group">
+            {{ form_label(form.prestataire) }}
+                {{ form_widget(form.prestataire, {'attr': {'class': 'form-control'}}) }}
+                {{ form_errors(form.prestataire) }}
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="form-group">
+            {{ form_label(form.taxeTVA) }}
+            {{ form_widget(form.taxeTVA, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.taxeTVA) }}
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="form-group">
+            <button   type="button"  class="btn btn-success form-control" onclick="addline()">Ajouter</button>
+        </div>  
+    </div>
+</div>
+
+{{ form_end(form) }}
+
+
+<table class="table table-striped" id="ligneFactureTable">
+    <thead>
+        <tr>
+            <th>Service</th>
+            <th>Prestataire</th>
+            <th>Nb Jours</th>
+            <th>Prix Unitaire</th>
+            <th>TVA</th>
+            <th>Montant HT</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ligneFacture in lfacture.lignesFacture %}
+           <tr data-id="{{ ligneFacture.id }}">
+                <td>{{ ligneFacture.service }}</td>
+                <td>{{ ligneFacture.prestataire }}</td>
+                <td>{{ ligneFacture.nbJours }}</td>
+                <td>{{ ligneFacture.prixUnitaire }}</td>
+                <td>{{ ligneFacture.taxeTVA }}%</td>
+                <td>{{ ligneFacture.montantTotalHT|number_format(2, ',', ',') }}</td>
+
+                <td>
+                    <button class="btn btn-danger" onclick="deleteLigneFacture({{ ligneFacture.id }})">Supprimer</button>
+                </td>
+            </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+
+
+<script>
+
+    function addline() {
+        $.ajax({
+            type: 'POST',
+            url: $('#formadd').attr('action'),
+            data: $('#formadd').serialize(),
+            dataType: 'json',
+            success: function (response) {
+                var formattedAmount = parseFloat(response.montantTotalHT).toFixed(2);
+                var parts = formattedAmount.split('.');
+                var integerPart = parts[0];
+                var decimalPart = parts[1];
+                var numberWithThousands = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                var finalAmount = numberWithThousands + ',' + decimalPart;
+              var newRow = '<tr data-id="' + response.id + '">' +
+                '<td>' + response.service.description + '</td>' +
+                '<td>' + response.prestataire.nom + '</td>' +
+                '<td>' + response.nbJours + '</td>' +
+                '<td>' + response.prixUnitaire + '</td>' +
+                '<td>' + response.taxeTVA + '%' + '</td>'+
+                '<td>' + finalAmount + '</td>'+
+                '<td><button class="btn btn-danger" onclick="deleteLigneFacture('  + parseInt(response.id) + ')">Supprimer</button></td>' +
+                '</tr>';
+            $('#ligneFactureTable tbody').append(newRow); 
+        },
+            error: function (xhr, status, error) {
+                console.error(xhr.responseText);
+            }
+        });
+    }
+
+      function deleteLigneFacture(ligneFactureId) {
+            if (confirm("Êtes-vous sûr de vouloir supprimer cette ligne de facture ?")) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/facture/line/' + ligneFactureId,
+                    success: function(response) {
+                        alert(response.message);
+                        $('#ligneFactureTable tbody tr[data-id="' + ligneFactureId + '"]').remove();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                        alert("Une erreur s'est produite lors de la suppression de la ligne de facture.");
+                    }
+                });
+            }
+    }
+
+
+</script>

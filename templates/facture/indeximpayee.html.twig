@@ -1,0 +1,57 @@
+{% extends 'basefront.html.twig' %}
+
+{% block title %}Conge index{% endblock %}
+
+{% block body %}
+    <h1>Liste des Factures</h1>
+
+    <table border=2,class="table">
+        <thead>
+            <tr>
+                <th>N° Facture</th>
+                <th>Client</th>
+                <th>Date Facture    </th>
+                <th>TTC</th>
+                <th>Echéance</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for facture in factures %}
+            <tr>
+                <td>{{ facture.numFacture }}</td>
+                
+                <td>{{ facture.client.nom}}</td>
+                <td>{{ facture.dateFacturation ? facture.dateFacturation|date('Y-m-d') : '' }}</td>
+                <td>{{ facture.totalTTC|number_format(2, ',', ',')}}</td>
+                <td>{{ facture.dateEcheance ? facture.dateEcheance|date('Y-m-d') : '' }}</td>
+              
+                 <td align="center">
+     <button type="button" class="btn btn-default btn-sm dropdown-toggle dropdown-icon" data-toggle="dropdown">
+         Action
+         <span class="sr-only">Toggle Dropdown</span>
+     </button>
+     <div class="dropdown-menu" role="menu">
+  <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><span class="fa fa-eye text-dark"></span> Voir</a>
+
+                    <div class="dropdown-divider"></div>
+                     <a class="dropdown-item" href="{{ path('app_facture_addline', {'id': facture.id}) }}"><span class="fa fa-edit text-primary"></span> Modifier</a>
+                    <div class="dropdown-divider"></div>
+                    {{ include('facture/_delete_form.html.twig') }}
+         
+         
+     </div>
+
+ </td>
+               
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="8">Aucune Facture</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+   
+{% endblock %}
