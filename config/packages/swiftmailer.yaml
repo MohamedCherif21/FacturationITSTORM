@@ -1,0 +1,9 @@
+swiftmailer:
+    spool: { type: 'memory' }
+    transport: smtp
+    host: 'smtp.mail.yahoo.com'
+    port: 587
+    encryption: tls
+    auth_mode: login
+    username: 'cherifmouhamed9242@yahoo.fr'
+    password: 'atnriuajklcxhczb'

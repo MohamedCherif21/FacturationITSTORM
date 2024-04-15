@@ -1,41 +1,43 @@
 {{ form_start(form, {'attr': {'id': 'formadd', 'novalidate': 'novalidate'}}) }}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-
+<hr/>
 <h2>Facture</h2>
 
 <hr/>
 
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="form-group">
             {{ form_label(facture.numFacture) }}
             {{ form_widget(facture.numFacture, {'attr': {'class': 'form-control', 'readonly': 'readonly'}}) }}
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="form-group">
-            {{ form_label(facture.dateFacturation) }}
-            {{ form_widget(facture.dateFacturation) }}
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="form-group">
-            {{ form_label(facture.dateEcheance) }}
-            {{ form_widget(facture.dateEcheance) }}
-        </div>
-    </div>
-
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="form-group">
             {{ form_label(facture.client) }}
             {{ form_widget(facture.client, {'attr': {'class': 'form-control', 'readonly': 'readonly'}}) }}
         </div>
     </div>
 
-</div>
 
+    <div class="col-md-6">
+        <div class="form-group">
+            {{ form_label(facture.dateFacturation) }}
+            {{ form_widget(facture.dateFacturation, {'attr': {'class': 'form-control', 'readonly': 'readonly'}}) }}
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-group">
+            {{ form_label(facture.dateEcheance) }}
+            {{ form_widget(facture.dateEcheance, {'attr': {'class': 'form-control', 'id': 'dateEcheance'}}) }}
+        </div>
+    </div>
+
+    
+</div>
+<hr/>
 <h2>Ajouter Services</h2>
 <hr/>
  <div class="row align-items-end">
@@ -47,11 +49,18 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-2">
         <div class="form-group">
             {{ form_label(form.prestataire) }}
                 {{ form_widget(form.prestataire, {'attr': {'class': 'form-control'}}) }}
                 {{ form_errors(form.prestataire) }}
+        </div>
+    </div>
+     <div class="col-md-2">
+        <div class="form-group">
+            {{ form_label(form.prixUnitaire) }}
+            {{ form_widget(form.prixUnitaire, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.prixUnitaire) }}
         </div>
     </div>
 
@@ -62,6 +71,9 @@
             {{ form_errors(form.taxeTVA) }}
         </div>
     </div>
+
+    
+
     <div class="col-md-2">
         <div class="form-group">
             <button   type="button"  class="btn btn-success form-control" onclick="addline()">Ajouter</button>
@@ -153,5 +165,9 @@
             }
     }
 
+    // Détecter le changement de la date d'échéance et soumettre automatiquement le formulaire
+    $('#dateEcheance').change(function() {
+        $('#formadd').submit();
+    });
 
 </script>

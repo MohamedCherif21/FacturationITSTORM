@@ -16,6 +16,7 @@ class FactureLigneType extends AbstractType
         $builder
             ->add('service')
             ->add('prestataire')
+            ->add('prixUnitaire')
       
             ->add('taxeTVA', ChoiceType::class, [
                 'choices' => [

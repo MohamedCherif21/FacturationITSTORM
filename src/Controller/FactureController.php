@@ -15,6 +15,15 @@ use Symfony\Component\Routing\Annotation\Route;
 use App\Entity\Service;
 use App\Entity\LigneFacture;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Bundle\SwiftmailerBundle\SwiftmailerBundle;
+use Swift_Mailer;
+use Swift_Message;
+use Swift_Attachment;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Symfony\Component\Mailer\MailerInterface;
+
 
 #[Route('/facture')]
 class FactureController extends AbstractController
@@ -169,4 +178,45 @@ class FactureController extends AbstractController
         // Réponse JSON pour indiquer que la ligne de facture n'a pas été trouvée
         return new JsonResponse(['error' => 'La ligne de facture n\'a pas été trouvée'], JsonResponse::HTTP_NOT_FOUND);
     }
+    
+
+
+    #[Route('/sendemail/{id}', name: 'send_facture_email', methods: ['GET', 'POST'])]
+    public function sendemail($id, Request $request, Facture $facture, \Swift_Mailer $mailer)
+{
+
+    $options = new Options();
+    $options->set('isPhpEnabled', true); 
+    $options->set('isHtml5ParserEnabled', true); 
+    $options->set('isRemoteEnabled', true); 
+
+    $dompdf = new Dompdf($options);
+
+    $html = $this->renderView('facture/show.html.twig', ['facture' => $facture]);
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+    $pdfContent = $dompdf->output();
+
+    $pdfAttachment = new \Swift_Attachment($pdfContent, 'facture.pdf', 'application/pdf');
+
+    $message = (new \Swift_Message('Facture'))
+        ->setSubject('Votre facture')
+        ->setFrom('cherifmouhamed9242@yahoo.fr')
+        ->setTo('cherifmouhamed123@gmail.com')
+        ->setBody('Veuillez trouver votre facture en pièce jointe.');
+
+    $message->attach($pdfAttachment);
+
+    // Envoyer l'e-mail
+    try {
+        $mailer->send($message);
+        $this->addFlash('success', 'La facture a été envoyée par e-mail avec succès.');
+    } catch (TransportExceptionInterface $e) {
+        $this->addFlash('error', 'Une erreur s\'est produite lors de l\'envoi de la facture par e-mail.');
+    }
+    
+        return $this->redirectToRoute('app_facture_show', ['id' => $facture->getId()]);
+    }
+    
 }
