@@ -20,6 +20,7 @@ use Symfony\Bundle\SwiftmailerBundle\SwiftmailerBundle;
 use Swift_Mailer;
 use Swift_Message;
 use Swift_Attachment;
+use Swift_Image;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Symfony\Component\Mailer\MailerInterface;
@@ -33,6 +34,14 @@ class FactureController extends AbstractController
     {
         return $this->render('facture/index.html.twig', [
             'factures' => $FactureRepository->findAll(),
+        ]);
+    }
+
+    #[Route('/payee', name: 'app_facturepayee_index', methods: ['GET'])]
+    public function indexpayee(FactureRepository $FactureRepository): Response
+    {
+        return $this->render('facture/indexPayee.html.twig', [
+            'factures' => $FactureRepository->findPayeeFactures(),
         ]);
     }
 
@@ -146,6 +155,14 @@ class FactureController extends AbstractController
     }
 
 
+    #[Route('/e/{id}', name: 'app_efacture_show', methods: ['GET'])]
+    public function showefacture(Facture $facture): Response
+    {
+        return $this->render('facture/efacture.html.twig', [
+            'facture' => $facture,
+        ]);
+    }
+
 
     #[Route('/{id}', name: 'app_facture_delete', methods: ['POST'])]
     public function delete(Request $request, Facture $facture, FactureRepository $factureRepository): Response
@@ -162,20 +179,15 @@ class FactureController extends AbstractController
     {
         $entityManager = $this->getDoctrine()->getManager();
         
-        // Récupérer la ligne de facture à supprimer
         $ligneFacture = $entityManager->find(LigneFacture::class, $id);
 
-        // Vérifier si la ligne de facture existe
         if ($ligneFacture) {
-            // Supprimer la ligne de facture de la base de données
             $entityManager->remove($ligneFacture);
             $entityManager->flush();
 
-            // Réponse JSON pour indiquer que la suppression a réussi
             return new JsonResponse(['message' => 'La ligne de facture a été supprimée avec succès'], JsonResponse::HTTP_OK);
         }
 
-        // Réponse JSON pour indiquer que la ligne de facture n'a pas été trouvée
         return new JsonResponse(['error' => 'La ligne de facture n\'a pas été trouvée'], JsonResponse::HTTP_NOT_FOUND);
     }
     
@@ -192,7 +204,7 @@ class FactureController extends AbstractController
 
     $dompdf = new Dompdf($options);
 
-    $html = $this->renderView('facture/show.html.twig', ['facture' => $facture]);
+    $html = $this->renderView('facture/efacture.html.twig', ['facture' => $facture]);
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
@@ -200,18 +212,41 @@ class FactureController extends AbstractController
 
     $pdfAttachment = new \Swift_Attachment($pdfContent, 'facture.pdf', 'application/pdf');
 
-    $message = (new \Swift_Message('Facture'))
-        ->setSubject('Votre facture')
+
+    $subject = 'Facture ' . $facture->getDateFacturation()->format('F Y') . ' - ' . $facture->getClient()->getNom();
+
+    $imageUrl = 'http://localhost:8000/img/itstormsig.jpg';
+
+    $signatureImage = (new Swift_Image($imageUrl))->setFilename('signature.png');
+
+    $signatureHTML = '
+    <p>Bien Cordialement,</p>
+    <p style="margin: 0;">Farhat THABET, PhD</p>
+    <p style="margin: 0;">Président IT STORM Consulting</p>
+    <img src="' . $imageUrl . '" alt="Signature">';
+
+    $messageBody = '
+    <p>Bonjour,</p>
+    <p>Veuillez trouver ci-joint les factures liées à nos prestations, pour la période indiquée dans l\'objet de ce mail.</p>
+    <p>En attendant, nous restons à votre disposition pour tout complément d\'information.</p>
+    ' . $signatureHTML;
+
+    $message = (new Swift_Message())
+        ->setSubject($subject)
         ->setFrom('cherifmouhamed9242@yahoo.fr')
         ->setTo('cherifmouhamed123@gmail.com')
-        ->setBody('Veuillez trouver votre facture en pièce jointe.');
+        ->setBody($messageBody, 'text/html');
 
     $message->attach($pdfAttachment);
 
-    // Envoyer l'e-mail
+
     try {
         $mailer->send($message);
         $this->addFlash('success', 'La facture a été envoyée par e-mail avec succès.');
+        $facture->setEtat("envoyée");
+        $entityManager = $this->getDoctrine()->getManager();
+         $entityManager->persist($facture);
+         $entityManager->flush();
     } catch (TransportExceptionInterface $e) {
         $this->addFlash('error', 'Une erreur s\'est produite lors de l\'envoi de la facture par e-mail.');
     }

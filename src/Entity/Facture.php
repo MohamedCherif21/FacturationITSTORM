@@ -40,7 +40,7 @@ class Facture
 
 
     #[ORM\Column(length: 20)]
-    #[Assert\Choice(choices: ['ouvert', 'fermé'])]
+    #[Assert\Choice(choices: ['ouvert', 'envoyée','payée','non-payée'])]
     private ?string $etat = 'ouvert'; 
 
 
