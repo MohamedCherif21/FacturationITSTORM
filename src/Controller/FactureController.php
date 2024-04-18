@@ -24,7 +24,15 @@ use Swift_Image;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Symfony\Component\Mailer\MailerInterface;
-
+use DOMDocument;
+use setasign\Fpdi\Fpdi;
+use Spatie\PdfToImage\Pdf;
+use Imagick;
+use setasign\Fpdi\PdfParser\StreamReader;
+use setasign\fpdi\src\TcpdfFpdi ;
+use TCPDF_TCPDF;
+use tecnickcom\FacturX\FacturX;
+use tecnickcom\FacturX\XmlGenerator\Xml30Generator;
 
 #[Route('/facture')]
 class FactureController extends AbstractController
@@ -154,7 +162,6 @@ class FactureController extends AbstractController
         ]);
     }
 
-
     #[Route('/e/{id}', name: 'app_efacture_show', methods: ['GET'])]
     public function showefacture(Facture $facture): Response
     {
@@ -162,6 +169,54 @@ class FactureController extends AbstractController
             'facture' => $facture,
         ]);
     }
+
+
+    #[Route('/x/{id}', name: 'app_efacturx_show', methods: ['GET'])]
+    public function showfacturx(Facture $facture): Response
+    {
+        // Générer le contenu XML et SVG
+        $xmlContent = $this->generateXmlContent($facture);
+        $svgContent = $this->generateSvgContent($xmlContent);
+    
+        // Afficher la facture avec le contenu SVG
+        return $this->render('facture/efactur-x.html.twig', [
+            'svgContent' => $svgContent, // Passer le contenu SVG à la vue
+            'facture' => $facture,
+        ]);
+    }
+    
+    private function generateXmlContent(Facture $facture): string
+    {
+        // Générer le contenu XML
+        $xmlContent = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" .
+            '<Facturexml>' . "\n" .
+            '<NumFacture>' . htmlspecialchars($facture->getNumFacture()) . '</NumFacture>' . "\n" .
+            '<dateFacturation>' . htmlspecialchars($facture->getDateFacturation()->format('Y-m-d')) . '</dateFacturation>' . "\n" .
+            '<dateEcheance>' . htmlspecialchars($facture->getDateEcheance()->format('Y-m-d')) . '</dateEcheance>' . "\n" .
+            '<client>' . htmlspecialchars($facture->getClient()) . '</client>' . "\n" .
+            '<TotalTTC>' . htmlspecialchars($facture->getTotalTTC()) . '</TotalTTC>' . "\n" .
+            '<TotalTaxe>' . htmlspecialchars($facture->getTotalTaxe()) . '</TotalTaxe>' . "\n" .
+            '</Facturexml>';
+    
+        return $xmlContent;
+    }
+    
+    private function generateSvgContent(string $xmlContent): string
+    {
+        // Construction du contenu SVG avec des tspan pour chaque ligne
+        $lines = explode("\n", $xmlContent);
+        $textContent = '';
+        foreach ($lines as $line) {
+            $textContent .= '<tspan x="10" dy="1.2em">' . htmlspecialchars($line) . '</tspan>';
+        }
+    
+        $svgContent = '<svg width="500" height="200" xmlns="http://www.w3.org/2000/svg">' . "\n" .
+            '<text x="10" y="20">' . $textContent . '</text>' . "\n" .
+            '</svg>';
+    
+        return $svgContent;
+    }
+    
 
 
     #[Route('/{id}', name: 'app_facture_delete', methods: ['POST'])]
@@ -253,5 +308,72 @@ class FactureController extends AbstractController
     
         return $this->redirectToRoute('app_facture_show', ['id' => $facture->getId()]);
     }
+
+
+
+    #[Route('/sendfacturx/{id}', name: 'send_facturx_email', methods: ['GET', 'POST'])]
+    public function sendemailxfactur($id, Request $request, Facture $facture, \Swift_Mailer $mailer): Response
+    {
+        $xmlContent = $this->generateXmlContent($facture);
+        $svgContent = $this->generateSvgContent($xmlContent);
+        
+        $options = new Options();
+        $options->set('isPhpEnabled', true); 
+        $options->set('isHtml5ParserEnabled', true); 
+        $options->set('isRemoteEnabled', true); 
+    
+        $dompdf = new Dompdf($options);
+    
+        $html = $this->renderView('facture/efactur-x.html.twig', ['facture' => $facture,'svgContent' => $svgContent]);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A3', 'landscape');
+        $dompdf->render();
+        $pdfContent = $dompdf->output();
+    
+        $pdfAttachment = new \Swift_Attachment($pdfContent, 'facture.pdf', 'application/pdf');
+    
+    
+        $subject = 'Facture ' . $facture->getDateFacturation()->format('F Y') . ' - ' . $facture->getClient()->getNom();
+    
+        $imageUrl = 'http://localhost:8000/img/itstormsig.jpg';
+    
+        $signatureImage = (new Swift_Image($imageUrl))->setFilename('signature.png');
+    
+        $signatureHTML = '
+        <p>Bien Cordialement,</p>
+        <p style="margin: 0;">Farhat THABET, PhD</p>
+        <p style="margin: 0;">Président IT STORM Consulting</p>
+        <img src="' . $imageUrl . '" alt="Signature">';
+    
+        $messageBody = '
+        <p>Bonjour,</p>
+        <p>Veuillez trouver ci-joint les factures liées à nos prestations, pour la période indiquée dans l\'objet de ce mail.</p>
+        <p>En attendant, nous restons à votre disposition pour tout complément d\'information.</p>
+        ' . $signatureHTML;
+    
+        $message = (new Swift_Message())
+            ->setSubject($subject)
+            ->setFrom('cherifmouhamed9242@yahoo.fr')
+            ->setTo('cherifmouhamed123@gmail.com')
+            ->setBody($messageBody, 'text/html');
+    
+        $message->attach($pdfAttachment);
+    
+    
+        try {
+            $mailer->send($message);
+            $this->addFlash('success', 'La facture a été envoyée par e-mail avec succès.');
+            $facture->setEtat("envoyée");
+            $entityManager = $this->getDoctrine()->getManager();
+             $entityManager->persist($facture);
+             $entityManager->flush();
+        } catch (TransportExceptionInterface $e) {
+            $this->addFlash('error', 'Une erreur s\'est produite lors de l\'envoi de la facture par e-mail.');
+        }
+        
+            return $this->redirectToRoute('app_facture_show', ['id' => $facture->getId()]);
+}
+
+    
     
 }

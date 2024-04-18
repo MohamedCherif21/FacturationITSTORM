@@ -62,6 +62,8 @@
                     {{ include('facture/_delete_form.html.twig') }}
                      <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><span class="fa fa-edit text-primary"></span> Envoyer</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><span class="fa fa-edit text-primary"></span> Envoyer factur-x</a>
          
          
      </div>
