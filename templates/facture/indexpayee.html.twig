@@ -3,14 +3,14 @@
 {% block title %}Conge index{% endblock %}
 
 {% block body %}
-    <h1>Liste des Factures</h1>
-
+    <h1 style="text-align: center;">Liste des Factures payées</h1>
+<hr>
     <table border=2,class="table">
         <thead>
             <tr>
                 <th>N° Facture</th>
                 <th>Client</th>
-                <th>Date Facture    </th>
+                <th>Date de Facturation</th>
                 <th>TTC</th>
                 <th>Echéance</th>
                 <th>actions</th>
@@ -36,8 +36,8 @@
 
                     <div class="dropdown-divider"></div>
                      <a class="dropdown-item" href="{{ path('app_facture_addline', {'id': facture.id}) }}"><span class="fa fa-edit text-primary"></span> Modifier</a>
-                    <div class="dropdown-divider"></div>
-                    {{ include('facture/_delete_form.html.twig') }}
+                    {# <div class="dropdown-divider"></div>
+                    {{ include('facture/_delete_form.html.twig') }} #}
          
          
      </div>

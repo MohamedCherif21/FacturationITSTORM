@@ -134,6 +134,7 @@ class FactureController extends AbstractController
                 'prestataire' => $ligneFacture->getPrestataire(),
                 'nbJours' => $ligneFacture->getNbJours(),
                 'prixUnitaire' => $ligneFacture->getPrixUnitaire(),
+                // 'prixUnitaire' =>  $ligneFacture->getService()->getPrixUnitaireHT(),
                 'taxeTVA' => $ligneFacture->getTaxeTVA(),
                 'montantTotalHT' => $ligneFacture->getMontantTotalHT(),
             ];
@@ -184,7 +185,7 @@ class FactureController extends AbstractController
             'facture' => $facture,
         ]);
     }
-    
+
     private function generateXmlContent(Facture $facture): string
     {
         // Générer le contenu XML
@@ -195,12 +196,23 @@ class FactureController extends AbstractController
             '<dateEcheance>' . htmlspecialchars($facture->getDateEcheance()->format('Y-m-d')) . '</dateEcheance>' . "\n" .
             '<client>' . htmlspecialchars($facture->getClient()) . '</client>' . "\n" .
             '<TotalTTC>' . htmlspecialchars($facture->getTotalTTC()) . '</TotalTTC>' . "\n" .
-            '<TotalTaxe>' . htmlspecialchars($facture->getTotalTaxe()) . '</TotalTaxe>' . "\n" .
-            '</Facturexml>';
-    
+            '<TotalTaxe>' . htmlspecialchars($facture->getTotalTaxe()) . '</TotalTaxe>' . "\n";
+
+        // Ajouter les lignes de facture
+        foreach ($facture->getLignesFacture() as $ligneFacture) {
+            $xmlContent .= '<LigneFacture>' . "\n";
+            $xmlContent .= '<Description>' . htmlspecialchars($ligneFacture->getDescription()) . '</Description>' . "\n";
+            $xmlContent .= '<NbJours>' . htmlspecialchars($ligneFacture->getNbJours()) . '</NbJours>';
+            $xmlContent .= '<PrixUnitaire>' . htmlspecialchars($ligneFacture->getPrixUnitaire()) . '</PrixUnitaire>' ;
+            $xmlContent .= '<TotalHT>' . htmlspecialchars($ligneFacture->getmontantTotalHT()) . '</TotalHT>'. "\n" ;
+            $xmlContent .= '</LigneFacture>' . "\n";
+        }
+
+        $xmlContent .= '</Facturexml>';
+
         return $xmlContent;
     }
-    
+
     private function generateSvgContent(string $xmlContent): string
     {
         // Construction du contenu SVG avec des tspan pour chaque ligne
@@ -210,7 +222,7 @@ class FactureController extends AbstractController
             $textContent .= '<tspan x="10" dy="1.2em">' . htmlspecialchars($line) . '</tspan>';
         }
     
-        $svgContent = '<svg width="500" height="200" xmlns="http://www.w3.org/2000/svg">' . "\n" .
+        $svgContent = '<svg width="600" height="1000" xmlns="http://www.w3.org/2000/svg">' . "\n" .
             '<text x="10" y="20">' . $textContent . '</text>' . "\n" .
             '</svg>';
     

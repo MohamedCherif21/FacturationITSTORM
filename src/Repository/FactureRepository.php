@@ -71,7 +71,7 @@ class FactureRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('f')
             ->where('f.etat = :etat')
-            ->setParameter('etat', 'fermé')
+            ->setParameter('etat', 'non-payée')
             ->getQuery()
             ->getResult();
     }

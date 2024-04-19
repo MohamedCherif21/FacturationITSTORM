@@ -21,27 +21,25 @@ class Facture
 
     #[ORM\Column]
     #[Assert\NotBlank (message : "vous devez indiquer le numéro de facture")]
-    private ?string $numFacture = null;
+    private string $numFacture;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Assert\NotBlank (message : "la date de facturation est obligatoire")]
-    private ?\DateTimeInterface $dateFacturation = null;
+    private \DateTimeInterface $dateFacturation;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Assert\NotBlank (message : "la date d'échéance est obligatoire")]
-    private ?\DateTimeInterface $dateEcheance = null;
+    private \DateTimeInterface $dateEcheance ;
 
 
     #[ORM\ManyToOne(inversedBy: 'facture')]
+    #[Assert\NotBlank (message : "le client est obligatoire")]
     #[ORM\JoinColumn(onDelete:"CASCADE") ]
-    private ?Client $client = null;
-
-
-
+    private Client $client;
 
     #[ORM\Column(length: 20)]
-    #[Assert\Choice(choices: ['ouvert', 'envoyée','payée','non-payée'])]
-    private ?string $etat = 'ouvert'; 
+    #[Assert\Choice(choices: ['ouverte', 'envoyée','payée','non-payée'])]
+    private string $etat = 'ouverte'; 
 
 
     #[ORM\Column(type: "float", nullable: true)]

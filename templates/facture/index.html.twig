@@ -4,7 +4,7 @@
 
 {% block body %}
     <h1 style="text-align: center;">Liste des Factures</h1>
-<hr/>
+    <hr/>
     <table border=2,class="table">
         <thead>
             <tr>
@@ -22,54 +22,46 @@
             <tr>
                 <td>{{ facture.numFacture }}</td>
                 <td>{{ facture.dateFacturation ? facture.dateFacturation|date('Y-m-d') : '' }}</td>
-                <td>{{ facture.client.nom}}</td>
-                <td>{{ (facture.totalTTC - facture.totaltaxe)|number_format(2, ',', ',')}}</td>
-                <td>{{ facture.totalTTC|number_format(2, ',', ',')}}</td>
-   <td>
-    {% set badgeClass = '' %}
-    {% set iconClass = '' %}
-    {% if facture.etat == 'ouvert' %}
-        {% set badgeClass = 'badge-success' %}
-        {% set iconClass = 'fas fa-lock-open' %}
-    {% elseif facture.etat == 'envoyée' %}
-        {% set badgeClass = 'badge-warning' %}
-        {% set iconClass = 'fa-solid fa-bars-progress' %}
-    {% elseif facture.etat == 'payée' %}
-        {% set badgeClass = 'badge-primary' %}
-        {% set iconClass = 'far fa-handshake' %}
-    {% elseif facture.etat == 'non-payée' %}
-        {% set badgeClass = 'badge-danger' %}
-        {% set iconClass = 'far fa-handshake' %}
-    {% endif %}
-    <span class="badge {{ badgeClass }}">
-        <i class="{{ iconClass }}"></i> {{ facture.etat }}
-    </span>
-</td>
-
-
-              
-                 <td align="center">
-     <button type="button" class="btn btn-default btn-sm dropdown-toggle dropdown-icon" data-toggle="dropdown">
-         Action
-         <span class="sr-only">Toggle Dropdown</span>
-     </button>
-     <div class="dropdown-menu" role="menu">
-  <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><span class="fa fa-eye text-dark"></span> Voir</a>
-
-                    <div class="dropdown-divider"></div>
-                     <a class="dropdown-item" href="{{ path('app_facture_addline', {'id': facture.id}) }}"><span class="fa fa-edit text-primary"></span> Modifier</a>
-                    <div class="dropdown-divider"></div>
-                    {{ include('facture/_delete_form.html.twig') }}
-                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><span class="fa fa-edit text-primary"></span> Envoyer</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><span class="fa fa-edit text-primary"></span> Envoyer factur-x</a>
-         
-         
-     </div>
-
- </td>
-               
+                <td>{{ facture.client.nom }}</td>
+                <td>{{ (facture.totalTTC - facture.totaltaxe)|number_format(2, ',', ',') }}</td>
+                <td>{{ facture.totalTTC|number_format(2, ',', ',') }}</td>
+                <td>
+                    {% set badgeClass = '' %}
+                    {% set iconClass = '' %}
+                    {% if facture.etat == 'ouverte' %}
+                        {% set badgeClass = 'badge-success' %}
+                        {% set iconClass = 'fas fa-lock-open' %}
+                    {% elseif facture.etat == 'envoyée' %}
+                        {% set badgeClass = 'badge-warning' %}
+                        {% set iconClass = 'fas fa-paper-plane' %}
+                    {% elseif facture.etat == 'payée' %}
+                        {% set badgeClass = 'badge-primary' %}
+                        {% set iconClass = 'fas fa-handshake' %}
+                    {% elseif facture.etat == 'non-payée' %}
+                        {% set badgeClass = 'badge-danger' %}
+                        {% set iconClass = 'fas fa-handshake-slash' %}
+                    {% endif %}
+                    <span class="badge {{ badgeClass }}">
+                        <i class="{{ iconClass }}"></i> {{ facture.etat }}
+                    </span>
+                </td>
+                <td align="center">
+                    <button type="button" class="btn btn-default btn-sm dropdown-toggle dropdown-icon" data-toggle="dropdown">
+                        Action
+                        <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <div class="dropdown-menu" role="menu">
+                        <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ path('app_facture_addline', {'id': facture.id}) }}"><span class="fas fa-edit"></span> Modifier</a>
+                        {# <div class="dropdown-divider"></div>
+                       <i class="fas fa-trash">{{ include('facture/_delete_form.html.twig') }}</i>  #}
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i class="fas fa-paper-plane"></i> Envoyer</a>
+                        <div class="dropdown-divider"></div>
+                         <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                    </div>
+                </td>
             </tr>
         {% else %}
             <tr>
@@ -78,6 +70,4 @@
         {% endfor %}
         </tbody>
     </table>
-
-   
 {% endblock %}
