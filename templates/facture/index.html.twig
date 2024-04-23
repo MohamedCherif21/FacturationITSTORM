@@ -23,8 +23,8 @@
                 <td>{{ facture.numFacture }}</td>
                 <td>{{ facture.dateFacturation ? facture.dateFacturation|date('Y-m-d') : '' }}</td>
                 <td>{{ facture.client.nom }}</td>
-                <td>{{ (facture.totalTTC - facture.totaltaxe)|number_format(2, ',', ',') }}</td>
-                <td>{{ facture.totalTTC|number_format(2, ',', ',') }}</td>
+                <td>{{ (facture.totalTTC - facture.totaltaxe)|number_format(2, ',', ' ') }}</td>
+                <td>{{ facture.totalTTC|number_format(2, ',', ' ') }}</td>
                 <td>
                     {% set badgeClass = '' %}
                     {% set iconClass = '' %}
@@ -60,6 +60,8 @@
                         <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i class="fas fa-paper-plane"></i> Envoyer</a>
                         <div class="dropdown-divider"></div>
                          <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                         <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Vérifier paiement</a>
                     </div>
                 </td>
             </tr>

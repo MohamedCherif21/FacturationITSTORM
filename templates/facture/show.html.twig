@@ -45,9 +45,7 @@
         </div>
         <div class="col-md-6" style="text-align:right;">
             <p style="font-weight:bold;">Facture : {{ facture.dateFacturation|date('F Y') }}</p>
-            {% set difference = facture.dateEcheance|date('U') - facture.dateFacturation|date('U') %}
-            {% set joursRestants = difference / (3600 * 24) %}
-            <p style="font-weight:bold;">Date d'échéance : {{ joursRestants }} Jrs</p>
+            <p style="font-weight:bold;">Date d'échéance : {{ facture.delaiPaiement }} Jrs</p>
             <p style="font-weight:bold;">Date: {{ facture.dateFacturation|date('d/m/Y') }}</p>
         </div>
     </div>
@@ -69,8 +67,8 @@
             <tr>
                 <td style="padding: 5px;">{{ ligneFacture.description }}</td>
                 <td style="padding: 5px;">{{ ligneFacture.nbJours|number_format(1, ',', ',') }}</td>
-                <td style="padding: 5px;">{{ ligneFacture.prixUnitaire|number_format(2, ',', ',') }}</td>
-                <td style="padding: 5px;">{{ ligneFacture.montantTotalHT|number_format(2, ',', ',') }}</td>
+                <td style="padding: 5px;">{{ ligneFacture.prixUnitaire|number_format(2, ',', ' ') }}</td>
+                <td style="padding: 5px;">{{ ligneFacture.montantTotalHT|number_format(2, ',', ' ') }}</td>
             </tr>
         {% endfor %}
       </tbody>
@@ -82,20 +80,20 @@
     <br/>
     <div style="width: 100%; border-top: 1px solid black; margin-bottom: 10px;"></div>
    
-    <div class="col-md-6" style="text-align:right;padding-left: 570px;">
+    <div class="col-md-6" style="text-align:right;padding-left: 545px;">
         <table style="border-collapse: collapse;">
             <tr>
                 <td style="padding: 5px; border: none;">Sous-total HT :</td>
-                <td style="padding: 5px; font-weight: bold; border: none;">{{ facture.totalTTC|number_format(2, ',', ',') }}</td>
+                <td style="padding: 5px; font-weight: bold; border: none;">{{ facture.totalTTC|number_format(2, ',', ' ') }}</td>
             </tr>
             <tr>
                 <td style="padding: 5px; border: none;">TVA % :</td>
-                <td style="padding: 5px; font-weight: bold; border: none;">{{ facture.totaltaxe|number_format(2, ',', ',') }}</td>
+                <td style="padding: 5px; font-weight: bold; border: none;">{{ facture.totaltaxe|number_format(2, ',', ' ') }}</td>
             </tr>
 
             <tr style="border-block-end: ridge;">
                 <td style="padding: 5px; border: none;">Montant Total TTC :</td>
-                <td style="padding: 5px; font-weight: bold; ">{{ facture.totalTTC|number_format(2, ',', ',') }}</td>
+                <td style="padding: 5px; font-weight: bold; ">{{ facture.totalTTC|number_format(2, ',', ' ') }}</td>
             </tr>
             <tr>
                 <td style="padding: 5px; border: none;">Montant Payé :</td>
@@ -103,7 +101,7 @@
             </tr>
             <tr style="background-color: aquamarine;">
                 <td style="padding: 5px; border: none;">Montant à Payer (EUR) :</td>
-                <td style="padding: 5px; font-weight: bold; border: none;">{{ facture.totalTTC|number_format(2, ',', ',') }}</td>
+                <td style="padding: 5px; font-weight: bold; border: none;">{{ facture.totalTTC|number_format(2, ',', ' ') }}</td>
             </tr>
         </table>
     </div>

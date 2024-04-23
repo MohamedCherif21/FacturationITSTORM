@@ -28,13 +28,20 @@
         </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-6" style="display:none;">
         <div class="form-group">
             {{ form_label(facture.dateEcheance) }}
             {{ form_widget(facture.dateEcheance, {'attr': {'class': 'form-control', 'id': 'dateEcheance'}}) }}
         </div>
     </div>
 
+
+<div class="col-md-6">
+        <div class="form-group">
+            {{ form_label(facture.delaiPaiement) }}
+            {{ form_widget(facture.delaiPaiement, {'attr': {'class': 'form-control', 'id': 'dateEcheance'}}) }}
+        </div>
+    </div>
     
 </div>
 <hr/>
@@ -104,7 +111,7 @@
                 <td>{{ ligneFacture.nbJours }}</td>
                 <td>{{ ligneFacture.prixUnitaire }}</td>
                 <td>{{ ligneFacture.taxeTVA }}%</td>
-                <td>{{ ligneFacture.montantTotalHT|number_format(2, ',', ',') }}</td>
+                <td>{{ ligneFacture.montantTotalHT|number_format(2, ',', ' ') }}</td>
 
                 <td>
                     <button class="btn btn-danger" onclick="deleteLigneFacture({{ ligneFacture.id }})">Supprimer</button>
@@ -114,6 +121,7 @@
 
     </tbody>
 </table>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 
 
 <script>
@@ -169,5 +177,31 @@
     $('#dateEcheance').change(function() {
         $('#formadd').submit();
     });
+$(document).ready(function() {
+    // Fonction pour mettre à jour la date d'échéance en fonction de la date de facturation et du délai de paiement
+    function updateDateEcheance() {
+        // Récupérer la date de facturation et le délai de paiement sélectionné
+        var dateFacturation = new Date($('#facture_dateFacturation').val());
+        var delaiPaiement = parseInt($('#facture_delaiPaiement').val());
+
+        // Vérifier si la date de facturation est valide et si le délai de paiement est un nombre
+        if (!isNaN(dateFacturation.getTime()) && !isNaN(delaiPaiement)) {
+            // Calculer la nouvelle date d'échéance en ajoutant le délai de paiement en jours à la date de facturation
+            var dateEcheance = new Date(dateFacturation.getTime());
+            dateEcheance.setDate(dateEcheance.getDate() + delaiPaiement);
+
+            // Mettre à jour la valeur du champ de date d'échéance avec la nouvelle date calculée
+            var formattedDateEcheance = dateEcheance.toISOString().slice(0, 10); // Format AAAA-MM-JJ
+            $('#facture_dateEcheance').val(formattedDateEcheance);
+        }
+    }
+
+    // Écouter les changements sur les champs de date de facturation et de délai de paiement
+    $('#facture_dateFacturation, #facture_delaiPaiement').change(updateDateEcheance);
+
+    // Appeler la fonction pour mettre à jour la date d'échéance au chargement de la page
+    updateDateEcheance();
+});
+
 
 </script>

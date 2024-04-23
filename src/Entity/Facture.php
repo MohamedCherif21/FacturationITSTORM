@@ -37,14 +37,17 @@ class Facture
     #[ORM\JoinColumn(onDelete:"CASCADE") ]
     private Client $client;
 
-    #[ORM\Column(length: 20)]
-    #[Assert\Choice(choices: ['ouverte', 'envoyée','payée','non-payée'])]
-    private string $etat = 'ouverte'; 
+        #[ORM\Column(length: 20)]
+        #[Assert\Choice(choices: ['ouverte', 'envoyée','payée','non-payée'])]
+        private string $etat = 'ouverte'; 
 
 
     #[ORM\Column(type: "float", nullable: true)]
     private ?float $totalTTC = null;
 
+    
+    #[ORM\Column(type: "integer", nullable: true)]
+    private ?int $delaiPaiement = null;
 
     #[ORM\Column(type: "float", nullable: true)]
     private ?float $totaltaxe = null;
@@ -82,6 +85,17 @@ class Facture
         return $this;
     }
 
+    public function getDelaiPaiement(): ?int
+    {
+        return $this->delaiPaiement;
+    }
+
+    public function setDelaiPaiement(?int $delaiPaiement): self
+    {
+        $this->delaiPaiement = $delaiPaiement;
+
+        return $this;
+    }
 
     public function getTotalTaxe(): ?float
     {

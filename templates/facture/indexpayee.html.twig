@@ -23,7 +23,7 @@
                 
                 <td>{{ facture.client.nom}}</td>
                 <td>{{ facture.dateFacturation ? facture.dateFacturation|date('Y-m-d') : '' }}</td>
-                <td>{{ facture.totalTTC|number_format(2, ',', ',')}}</td>
+                <td>{{ facture.totalTTC|number_format(2, ',', ' ')}}</td>
                 <td>{{ facture.dateEcheance ? facture.dateEcheance|date('Y-m-d') : '' }}</td>
               
                  <td align="center">

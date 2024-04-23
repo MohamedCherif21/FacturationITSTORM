@@ -8,6 +8,8 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+
 
 class FactureType extends AbstractType
 {
@@ -27,6 +29,18 @@ class FactureType extends AbstractType
             'label_attr' => ['class' => 'form-label'], 
             'attr' => ['class' => 'form-control'],
         ])
+        ->add('delaiPaiement', ChoiceType::class, [
+            'label' => 'Echéance',
+            'choices' => [
+                '15 jours' => 15,
+                '20 jours' => 20,
+                '30 jours' => 30,
+                '45 jours' => 45,
+                '60 jours' => 60,
+            ],
+            'attr' => ['class' => 'form-control'],
+        ])
+
         ->add('dateEcheance', DateType::class, [
             'widget' => 'single_text',
             'data' => $dateEcheance,

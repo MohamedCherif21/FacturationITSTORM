@@ -1,29 +1,56 @@
-    {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
-    <hr/>
-        {{ form_label(form.numFacture) }}
-        {{ form_widget(form.numFacture, {'attr': {'class': 'form-control', 'readonly': 'readonly'}}) }}
-        {{ form_errors(form.numFacture) }}
+{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+<hr/>
+    {{ form_label(form.numFacture) }}
+    {{ form_widget(form.numFacture, {'attr': {'class': 'form-control', 'readonly': 'readonly'}}) }}
+    {{ form_errors(form.numFacture) }}
 
-        {{ form_label(form.client) }}
-        {{ form_widget(form.client, {'attr': {'class': 'form-control'}}) }}
-        {{ form_errors(form.client) }}
+    {{ form_label(form.client) }}
+    {{ form_widget(form.client, {'attr': {'class': 'form-control'}}) }}
+    {{ form_errors(form.client) }}
 
-         {{ form_label(form.dateFacturation) }}
-        {{ form_widget(form.dateFacturation)  }}
-        {{ form_errors(form.dateFacturation) }}
+    {{ form_label(form.dateFacturation) }}
+    {{ form_widget(form.dateFacturation, {'attr': {'class': 'form-control', 'id': 'dateFacturation'}}) }}
+    {{ form_errors(form.dateFacturation) }}
 
-        {{ form_label(form.dateEcheance) }}
-        {{ form_widget(form.dateEcheance)  }}
-        {{ form_errors(form.dateEcheance) }}
-        
-   
+    {{ form_label(form.delaiPaiement) }}
+    {{ form_widget(form.delaiPaiement, {'attr': {'class': 'form-control', 'id': 'delaiPaiement'}}) }}
+    {{ form_errors(form.delaiPaiement) }}
 
+    {{ form_label(form.dateEcheance) }}
+    {{ form_widget(form.dateEcheance, {'attr': {'class': 'form-control', 'readonly': 'readonly', 'id': 'dateEcheance'}}) }}
+    {{ form_errors(form.dateEcheance) }}
 
-        {# {{ form_label(form.etat) }}
-        {{ form_widget(form.etat, {'attr': {'class': 'form-control'}}) }}
-        {{ form_errors(form.etat) }} #}
+<hr/>
+    <button class="btn btn-success">{{ button_label|default('Save') }}</button>
 
-    <hr/>
-        <button class="btn btn-success">{{ button_label|default('Save') }}</button>
+{{ form_end(form) }}
 
-    {{ form_end(form) }}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script>
+$(document).ready(function() {
+    // Fonction pour mettre à jour la date d'échéance en fonction de la date de facturation et du délai de paiement
+    function updateDateEcheance() {
+        // Récupérer la date de facturation et le délai de paiement sélectionné
+        var dateFacturation = new Date($('#facture_dateFacturation').val());
+        var delaiPaiement = parseInt($('#facture_delaiPaiement').val());
+
+        // Vérifier si la date de facturation est valide et si le délai de paiement est un nombre
+        if (!isNaN(dateFacturation.getTime()) && !isNaN(delaiPaiement)) {
+            // Calculer la nouvelle date d'échéance en ajoutant le délai de paiement en jours à la date de facturation
+            var dateEcheance = new Date(dateFacturation.getTime());
+            dateEcheance.setDate(dateEcheance.getDate() + delaiPaiement);
+
+            // Mettre à jour la valeur du champ de date d'échéance avec la nouvelle date calculée
+            var formattedDateEcheance = dateEcheance.toISOString().slice(0, 10); // Format AAAA-MM-JJ
+            $('#facture_dateEcheance').val(formattedDateEcheance);
+        }
+    }
+
+    // Écouter les changements sur les champs de date de facturation et de délai de paiement
+    $('#facture_dateFacturation, #facture_delaiPaiement').change(updateDateEcheance);
+
+    // Appeler la fonction pour mettre à jour la date d'échéance au chargement de la page
+    updateDateEcheance();
+});
+
+</script>

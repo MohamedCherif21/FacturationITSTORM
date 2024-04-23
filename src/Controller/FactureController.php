@@ -72,7 +72,7 @@ class FactureController extends AbstractController
 
      $facture->setNumFacture('FAC/' . date('Y') . '/' . str_pad($newFactureNumber, 6, '0', STR_PAD_LEFT));
     //  $facture->setDateFacturation(new \DateTime());
-    $facture->setEtat("ouvert");
+    $facture->setEtat("ouverte");
      $form = $this->createForm(FactureType::class, $facture);
      $form->handleRequest($request);
 

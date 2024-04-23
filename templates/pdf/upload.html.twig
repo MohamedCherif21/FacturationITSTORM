@@ -1,0 +1,14 @@
+{# templates/pdf/upload.html.twig #}
+
+{% extends 'basefront.html.twig' %}
+
+{% block title %}Télécharger un fichier PDF{% endblock %}
+
+{% block body %}
+    <h1>Télécharger un fichier PDF</h1>
+
+    {{ form_start(form) }}
+    {{ form_row(form.pdfFile) }}
+    <button type="submit" class="btn btn-primary">Télécharger</button>
+    {{ form_end(form) }}
+{% endblock %}

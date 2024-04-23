@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b0dcab2cce4fbca059b64e2d77a65cbe",
+    "content-hash": "60ba24e42195dcb459b453a1ff746194",
     "packages": [
         {
             "name": "atgp/factur-x",
@@ -11003,7 +11003,7 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
