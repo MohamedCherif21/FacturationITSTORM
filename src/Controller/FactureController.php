@@ -33,17 +33,35 @@ use setasign\fpdi\src\TcpdfFpdi ;
 use TCPDF_TCPDF;
 use tecnickcom\FacturX\FacturX;
 use tecnickcom\FacturX\XmlGenerator\Xml30Generator;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+
 
 #[Route('/facture')]
 class FactureController extends AbstractController
 {
     #[Route('/', name: 'app_facture_index', methods: ['GET'])]
-    public function index(FactureRepository $FactureRepository): Response
+    public function index(Request $request, FactureRepository $factureRepository): Response
     {
+        $startDate = $request->query->get('start_date');
+        $endDate = $request->query->get('end_date');
+    
+        // Si les dates ne sont pas fournies, affichez toutes les factures
+        if (!$startDate || !$endDate) {
+            $factures = $factureRepository->findAll();
+        } else {
+            // Recherchez les factures entre les dates spécifiées
+            $startDateObj = new \DateTime($startDate);
+            $endDateObj = new \DateTime($endDate);
+            $factures = $factureRepository->findByDateRange($startDateObj, $endDateObj);
+        }
+    
         return $this->render('facture/index.html.twig', [
-            'factures' => $FactureRepository->findAll(),
+            'factures' => $factures,
         ]);
     }
+    
+
 
     #[Route('/payee', name: 'app_facturepayee_index', methods: ['GET'])]
     public function indexpayee(FactureRepository $FactureRepository): Response
@@ -169,6 +187,26 @@ class FactureController extends AbstractController
         return $this->render('facture/efacture.html.twig', [
             'facture' => $facture,
         ]);
+    }
+
+    #[Route('/Setmanuelp/{id}', name: 'set_facture_payée', methods: ['GET'])]
+    public function setfacturepayee(Facture $facture): Response
+    {
+        $facture->SetEtat('payée');
+        $entityManager = $this->getDoctrine()->getManager();
+        $entityManager->persist($facture);
+        $entityManager->flush();
+        return $this->redirectToRoute('app_facture_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    #[Route('/Setmanuelnp/{id}', name: 'set_facture_nonpayée', methods: ['GET'])]
+    public function setfacturenonpayee(Facture $facture): Response
+    {
+        $facture->SetEtat('non-payée');
+        $entityManager = $this->getDoctrine()->getManager();
+        $entityManager->persist($facture);
+        $entityManager->flush();
+        return $this->redirectToRoute('app_facture_index', [], Response::HTTP_SEE_OTHER);
     }
 
 
@@ -317,8 +355,9 @@ class FactureController extends AbstractController
     } catch (TransportExceptionInterface $e) {
         $this->addFlash('error', 'Une erreur s\'est produite lors de l\'envoi de la facture par e-mail.');
     }
-    
-        return $this->redirectToRoute('app_facture_show', ['id' => $facture->getId()]);
+        $this->addFlash('success', 'La facture ' . $facture->getNumfacture() . ' est envoyée avec succés à ' . $facture->getClient()->getNom() );
+
+        return $this->redirectToRoute('app_facture_index');
     }
 
 
@@ -384,6 +423,27 @@ class FactureController extends AbstractController
         }
         
             return $this->redirectToRoute('app_facture_show', ['id' => $facture->getId()]);
+}
+
+
+#[Route('/verify-factures', name: 'verify_factures')]
+public function verifierfacture(FactureRepository $factureRepository): Response
+{
+    $factures = $factureRepository->findAll();
+    $dateNow = new \DateTime();
+    foreach ($factures as $facture) {
+        if ($facture->getDateEcheance() < $dateNow) {
+            if ($facture->getEtat() !== 'payée') {
+                $facture->setEtat('non-payée');
+                $entityManager = $this->getDoctrine()->getManager();
+                $entityManager->persist($facture);
+            }
+        }
+    }
+    $entityManager->flush();
+
+    $this->addFlash('success', 'La vérification des factures a été effectuée avec succès.');
+    return $this->redirectToRoute('app_facture_index'); 
 }
 
     

@@ -3,6 +3,12 @@
 {% block title %}Conge index{% endblock %}
 
 {% block body %}
+
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success">
+        {{ message }}
+    </div>
+{% endfor %}
     <h1 style="text-align: center;">Liste des Factures payées</h1>
 <hr>
     <table border=2,class="table">

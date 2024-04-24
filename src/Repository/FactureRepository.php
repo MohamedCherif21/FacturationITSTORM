@@ -85,6 +85,17 @@ class FactureRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function findByDateRange(\DateTime $startDate, \DateTime $endDate): ?array
+    {
+        return $this->createQueryBuilder('f')
+            ->andWhere('f.dateFacturation BETWEEN :start_date AND :end_date')
+            ->setParameter('start_date', $startDate)
+            ->setParameter('end_date', $endDate)
+            ->orderBy('f.dateFacturation', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
 //    /**
 //     * @return Conge[] Returns an array of Conge objects
 //     */

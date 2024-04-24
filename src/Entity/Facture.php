@@ -38,7 +38,7 @@ class Facture
     private Client $client;
 
         #[ORM\Column(length: 20)]
-        #[Assert\Choice(choices: ['ouverte', 'envoyée','payée','non-payée'])]
+        #[Assert\Choice(choices: ['ouverte', 'envoyée','payée','non-payée','à_vérifier'])]
         private string $etat = 'ouverte'; 
 
 

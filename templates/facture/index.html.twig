@@ -1,10 +1,69 @@
 {% extends 'basefront.html.twig' %}
 
-{% block title %}Conge index{% endblock %}
+{% block title %}Factures{% endblock %}
 
 {% block body %}
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success">
+        {{ message }}
+    </div>
+{% endfor %}
+{% for message in app.flashes('error') %}
+    <div class="alert alert-danger">
+        {{ message }}
+    </div>
+{% endfor %}
+    <style>
+        .blinking {
+    animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+    }
+
+    </style>
     <h1 style="text-align: center;">Liste des Factures</h1>
     <hr/>
+    <form method="get" action="{{ path('app_facture_index') }}">
+    <div class="row align-items-end">
+        <div class="col-md-5">
+            <div class="form-group">
+                <label for="start_date">Date de début :</label>
+                <input class="form-control" type="date" id="start_date" name="start_date" value="{{ app.request.query.get('start_date') }}">
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="form-group">
+                <label for="end_date">Date de fin :</label>
+                <input class="form-control" type="date" id="end_date" name="end_date" value="{{ app.request.query.get('end_date') }}">
+            </div>
+        </div>
+
+         <div class="col-md-2">
+    <div class="form-group">
+        <button class="btn btn-primary form-control" type="submit">Filtrer</button>
+    </div>  
+</div>
+
+{# <div class="col-md-2">
+    <div class="form-group">
+        <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i class="fas fa-check"></i> Vérifier paiement</a>
+
+    </div>  
+</div> #}
+
+    </div>
+</form>
+
+   
+
+
+
+     <hr/>
     <table border=2,class="table">
         <thead>
             <tr>
@@ -40,6 +99,10 @@
                     {% elseif facture.etat == 'non-payée' %}
                         {% set badgeClass = 'badge-danger' %}
                         {% set iconClass = 'fas fa-handshake-slash' %}
+                   {% elseif facture.etat == 'à_vérifier' %}
+                        {% set badgeClass = 'badge-info blinking' %}
+                        {% set iconClass = 'fas fa-exclamation' %}
+
                     {% endif %}
                     <span class="badge {{ badgeClass }}">
                         <i class="{{ iconClass }}"></i> {{ facture.etat }}
@@ -50,20 +113,47 @@
                         Action
                         <span class="sr-only">Toggle Dropdown</span>
                     </button>
-                    <div class="dropdown-menu" role="menu">
-                        <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="{{ path('app_facture_addline', {'id': facture.id}) }}"><span class="fas fa-edit"></span> Modifier</a>
-                        {# <div class="dropdown-divider"></div>
-                       <i class="fas fa-trash">{{ include('facture/_delete_form.html.twig') }}</i>  #}
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i class="fas fa-paper-plane"></i> Envoyer</a>
-                        <div class="dropdown-divider"></div>
-                         <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
-                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Vérifier paiement</a>
-                    </div>
-                </td>
+               <div class="dropdown-menu" role="menu">
+                
+                <div class="dropdown-divider"></div>
+
+                {% if facture.etat == 'ouverte' %}
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('app_facture_addline', {'id': facture.id}) }}"><span class="fas fa-edit"></span> Modifier</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i class="fas fa-paper-plane"></i> Envoyer</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i class="fas fa-check"></i> Vérifier paiement</a>
+                {% elseif facture.etat == 'envoyée' %}
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i class="fas fa-paper-plane"></i> Renvoyer</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i class="fas fa-check"></i> Vérifier paiement</a>
+                {% elseif facture.etat == 'payée' %}
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                {% elseif facture.etat == 'à_vérifier' %}
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('set_facture_payée', {'id': facture.id}) }}"><i class="fas fa-handshake"></i> Facture payée</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('set_facture_nonpayée', {'id': facture.id}) }}"><i class="fas fa-handshake-slash"></i> Facture non-payée</a>
+                {% elseif facture.etat == 'non-payée' %}
+                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i class="fas fa-paper-plane"></i> Renvoyer</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                {% endif %}
+            </div>
+
             </tr>
         {% else %}
             <tr>
