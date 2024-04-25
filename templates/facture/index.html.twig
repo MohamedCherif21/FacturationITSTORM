@@ -1,164 +1,208 @@
 {% extends 'basefront.html.twig' %}
 
-{% block title %}Factures{% endblock %}
+{% block title %}
+{% if startDate and endDate %}
+Factures entre {{ startDate|date('Y-m-d') }} et {{ endDate|date('Y-m-d') }}
+{% else %}
+Factures
+{% endif %}
+{% endblock %}
 
 {% block body %}
+
 {% for message in app.flashes('success') %}
-    <div class="alert alert-success">
-        {{ message }}
-    </div>
+<div class="alert alert-success">
+    {{ message }}
+</div>
 {% endfor %}
 {% for message in app.flashes('error') %}
-    <div class="alert alert-danger">
-        {{ message }}
-    </div>
+<div class="alert alert-danger">
+    {{ message }}
+</div>
 {% endfor %}
-    <style>
-        .blinking {
-    animation: blink 1s infinite;
+
+<style>
+    .blinking {
+        animation: blink 1s infinite;
     }
 
     @keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0; }
-    100% { opacity: 1; }
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0;
+        }
+
+        100% {
+            opacity: 1;
+        }
     }
+</style>
 
-    </style>
     <h1 style="text-align: center;">Liste des Factures</h1>
-    <hr/>
-    <form method="get" action="{{ path('app_facture_index') }}">
-    <div class="row align-items-end">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label for="start_date">Date de début :</label>
-                <input class="form-control" type="date" id="start_date" name="start_date" value="{{ app.request.query.get('start_date') }}">
-            </div>
-        </div>
+<hr />
 
-        <div class="col-md-4">
-            <div class="form-group">
-                <label for="end_date">Date de fin :</label>
-                <input class="form-control" type="date" id="end_date" name="end_date" value="{{ app.request.query.get('end_date') }}">
-            </div>
+{# Formulaire de saisie des dates et de téléchargement du PDF #}
+{{ form_start(form) }}
+<div class="row align-items-end">
+    <div class="col-md-5">
+        <div class="form-group">
+            {{ form_label(form.startDate) }}
+            {{ form_widget(form.startDate, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.startDate) }}
         </div>
+    </div>
 
-         <div class="col-md-2">
-    <div class="form-group">
-        <button class="btn btn-primary form-control" type="submit">Filtrer</button>
-    </div>  
-</div>
+    <div class="col-md-5">
+        <div class="form-group">
+            {{ form_label(form.endDate) }}
+            {{ form_widget(form.endDate, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.endDate) }}
+        </div>
+    </div>
+        <div class="col-md-2">
+        <div class="form-group">
+            <button type="submit" name="filtrer" class="btn btn-primary">Filtrer</button>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="form-group">
+            {{ form_label(form.pdfFile) }}
+            {{ form_widget(form.pdfFile, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.pdfFile) }}
+        </div>
+    </div>
+    
 
     <div class="col-md-2">
         <div class="form-group">
-            <a href="{{ path('upload_pdf_dates', {'start_date': app.request.query.get('start_date'), 'end_date': app.request.query.get('end_date')}) }}" class="btn btn-primary">Vérifier factures</a>
-        </div>   
+            <button type="submit" name="verifier" class="btn btn-primary">Vérifier Facture</button>
+        </div>
     </div>
 
-    </div>
-</form>
 
-   
+</div>
+{{ form_end(form) }}
 
-
-
-     <hr/>
-    <table border=2,class="table">
-        <thead>
-            <tr>
-                <th>N° Facture</th>
-                <th>Date de Facturation</th>
-                <th>Client</th>
-                <th>HT</th>
-                <th>TTC</th>
-                <th>ETAT</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
+<hr />
+<hr />
+<table border=2,class="table">
+    <thead>
+        <tr>
+            <th>N° Facture</th>
+            <th>Date de Facturation</th>
+            <th>Client</th>
+            <th>HT</th>
+            <th>TTC</th>
+            <th>ETAT</th>
+            <th>actions</th>
+        </tr>
+    </thead>
+    <tbody>
         {% for facture in factures %}
-            <tr>
-                <td>{{ facture.numFacture }}</td>
-                <td>{{ facture.dateFacturation ? facture.dateFacturation|date('Y-m-d') : '' }}</td>
-                <td>{{ facture.client.nom }}</td>
-                <td>{{ (facture.totalTTC - facture.totaltaxe)|number_format(2, ',', ' ') }}</td>
-                <td>{{ facture.totalTTC|number_format(2, ',', ' ') }}</td>
-                <td>
-                    {% set badgeClass = '' %}
-                    {% set iconClass = '' %}
-                    {% if facture.etat == 'ouverte' %}
-                        {% set badgeClass = 'badge-success' %}
-                        {% set iconClass = 'fas fa-lock-open' %}
-                    {% elseif facture.etat == 'envoyée' %}
-                        {% set badgeClass = 'badge-warning' %}
-                        {% set iconClass = 'fas fa-paper-plane' %}
-                    {% elseif facture.etat == 'payée' %}
-                        {% set badgeClass = 'badge-primary' %}
-                        {% set iconClass = 'fas fa-handshake' %}
-                    {% elseif facture.etat == 'non-payée' %}
-                        {% set badgeClass = 'badge-danger' %}
-                        {% set iconClass = 'fas fa-handshake-slash' %}
-                   {% elseif facture.etat == 'à_vérifier' %}
-                        {% set badgeClass = 'badge-info blinking' %}
-                        {% set iconClass = 'fas fa-exclamation' %}
-
-                    {% endif %}
-                    <span class="badge {{ badgeClass }}">
-                        <i class="{{ iconClass }}"></i> {{ facture.etat }}
-                    </span>
-                </td>
-                <td align="center">
-                    <button type="button" class="btn btn-default btn-sm dropdown-toggle dropdown-icon" data-toggle="dropdown">
-                        Action
-                        <span class="sr-only">Toggle Dropdown</span>
-                    </button>
-               <div class="dropdown-menu" role="menu">
-                
-                <div class="dropdown-divider"></div>
-
+        <tr>
+            <td>{{ facture.numFacture }}</td>
+            <td>{{ facture.dateFacturation ? facture.dateFacturation|date('Y-m-d') : '' }}</td>
+            <td>{{ facture.client.nom }}</td>
+            <td>{{ (facture.totalTTC - facture.totaltaxe)|number_format(2, ',', ' ') }}</td>
+            <td>{{ facture.totalTTC|number_format(2, ',', ' ') }}</td>
+            <td>
+                {% set badgeClass = '' %}
+                {% set iconClass = '' %}
                 {% if facture.etat == 'ouverte' %}
-                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('app_facture_addline', {'id': facture.id}) }}"><span class="fas fa-edit"></span> Modifier</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i class="fas fa-paper-plane"></i> Envoyer</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i class="fas fa-check"></i> Vérifier paiement</a>
+                {% set badgeClass = 'badge-success' %}
+                {% set iconClass = 'fas fa-lock-open' %}
                 {% elseif facture.etat == 'envoyée' %}
-                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i class="fas fa-paper-plane"></i> Renvoyer</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i class="fas fa-check"></i> Vérifier paiement</a>
+                {% set badgeClass = 'badge-warning' %}
+                {% set iconClass = 'fas fa-paper-plane' %}
                 {% elseif facture.etat == 'payée' %}
-                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
-                {% elseif facture.etat == 'à_vérifier' %}
-                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('set_facture_payée', {'id': facture.id}) }}"><i class="fas fa-handshake"></i> Facture payée</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('set_facture_nonpayée', {'id': facture.id}) }}"><i class="fas fa-handshake-slash"></i> Facture non-payée</a>
+                {% set badgeClass = 'badge-primary' %}
+                {% set iconClass = 'fas fa-handshake' %}
                 {% elseif facture.etat == 'non-payée' %}
-                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i class="fas fa-paper-plane"></i> Renvoyer</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i class="fas fa-eye"></i> Détail</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a>
-                {% endif %}
-            </div>
+                {% set badgeClass = 'badge-danger' %}
+                {% set iconClass = 'fas fa-handshake-slash' %}
+                {% elseif facture.etat == 'à_vérifier' %}
+                {% set badgeClass = 'badge-info blinking' %}
+                {% set iconClass = 'fas fa-exclamation' %}
 
-            </tr>
+                {% endif %}
+                <span class="badge {{ badgeClass }}">
+                    <i class="{{ iconClass }}"></i> {{ facture.etat }}
+                </span>
+            </td>
+            <td align="center">
+                <button type="button" class="btn btn-default btn-sm dropdown-toggle dropdown-icon"
+                    data-toggle="dropdown">
+                    Action
+                    <span class="sr-only">Toggle Dropdown</span>
+                </button>
+                <div class="dropdown-menu" role="menu">
+
+                    <div class="dropdown-divider"></div>
+
+                    {% if facture.etat == 'ouverte' %}
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i
+                            class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('app_facture_addline', {'id': facture.id}) }}"><span
+                            class="fas fa-edit"></span> Modifier</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i
+                            class="fas fa-paper-plane"></i> Envoyer</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i
+                            class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i
+                            class="fas fa-check"></i> Vérifier paiement</a>
+                    {% elseif facture.etat == 'envoyée' %}
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i
+                            class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i
+                            class="fas fa-paper-plane"></i> Renvoyer</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i
+                            class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i
+                            class="fas fa-check"></i> Vérifier paiement</a>
+                    {% elseif facture.etat == 'payée' %}
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i
+                            class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i
+                            class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                    {% elseif facture.etat == 'à_vérifier' %}
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i
+                            class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('set_facture_payée', {'id': facture.id}) }}"><i
+                            class="fas fa-handshake"></i> Facture payée</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('set_facture_nonpayée', {'id': facture.id}) }}"><i
+                            class="fas fa-handshake-slash"></i> Facture non-payée</a>
+                    {% elseif facture.etat == 'non-payée' %}
+                    <a class="dropdown-item" href="{{ path('send_facture_email', {'id': facture.id}) }}"><i
+                            class="fas fa-paper-plane"></i> Renvoyer</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('app_facture_show', {'id': facture.id}) }}"><i
+                            class="fas fa-eye"></i> Détail</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ path('send_facturx_email', {'id': facture.id}) }}"><i
+                            class="fas fa-file-invoice"></i> Envoyer factur-x</a>
+                    {% endif %}
+                </div>
+
+        </tr>
         {% else %}
-            <tr>
-                <td colspan="8">Aucune Facture</td>
-            </tr>
+        <tr>
+            <td colspan="8">Aucune Facture</td>
+        </tr>
         {% endfor %}
-        </tbody>
-    </table>
+    </tbody>
+</table>
 {% endblock %}

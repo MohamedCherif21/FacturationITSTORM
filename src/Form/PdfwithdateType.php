@@ -18,7 +18,8 @@ class PdfwithdateType extends AbstractType
 
         $builder
             ->add('pdfFile', FileType::class, [
-                'label' => 'Fichier PDF'
+                'label' => 'Fichier PDF',
+                'required' => false,
             ])
             ->add('startDate', DateType::class, [
                 'label' => 'Date de début',
