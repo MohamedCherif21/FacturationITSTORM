@@ -12,18 +12,10 @@
     </div>
 {% endfor %}
 
-<h1>Télécharger un fichier PDF</h1>
+    <h1>Télécharger un fichier PDF</h1>
 
-{{ form_start(form) }}
-{{ form_row(form.pdfFile) }}
-
-<div class="form-check">
-    <input class="form-check-input" type="checkbox" value="1" id="allFactures" name="allFactures">
-    <label class="form-check-label" for="allFactures">
-        Traiter toutes les factures non-payées et envoyées
-    </label>
-</div>
-
-<button type="submit" class="btn btn-primary">Vérifier</button>
-{{ form_end(form) }}
+    {{ form_start(form) }}
+    {{ form_row(form.pdfFiles) }}
+    <button type="submit" class="btn btn-primary">Vérifier</button>
+    {{ form_end(form) }}
 {% endblock %}

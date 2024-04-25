@@ -29,14 +29,14 @@
     <hr/>
     <form method="get" action="{{ path('app_facture_index') }}">
     <div class="row align-items-end">
-        <div class="col-md-5">
+        <div class="col-md-4">
             <div class="form-group">
                 <label for="start_date">Date de début :</label>
                 <input class="form-control" type="date" id="start_date" name="start_date" value="{{ app.request.query.get('start_date') }}">
             </div>
         </div>
 
-        <div class="col-md-5">
+        <div class="col-md-4">
             <div class="form-group">
                 <label for="end_date">Date de fin :</label>
                 <input class="form-control" type="date" id="end_date" name="end_date" value="{{ app.request.query.get('end_date') }}">
@@ -49,12 +49,11 @@
     </div>  
 </div>
 
-{# <div class="col-md-2">
-    <div class="form-group">
-        <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i class="fas fa-check"></i> Vérifier paiement</a>
-
-    </div>  
-</div> #}
+    <div class="col-md-2">
+        <div class="form-group">
+            <a href="{{ path('upload_pdf_dates', {'start_date': app.request.query.get('start_date'), 'end_date': app.request.query.get('end_date')}) }}" class="btn btn-primary">Vérifier factures</a>
+        </div>   
+    </div>
 
     </div>
 </form>
