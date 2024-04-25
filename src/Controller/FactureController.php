@@ -19,10 +19,32 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 #[Route('/facture')]
 class FactureController extends AbstractController
 {
+
+    #[Route('/verify-factures', name: 'verify_factures')]
+    public function verifierfacture(FactureRepository $factureRepository): Response
+    {
+        $factures = $factureRepository->findAll();
+        $dateNow = new \DateTime();
+        foreach ($factures as $facture) {
+            if ($facture->getDateEcheance() < $dateNow) {
+                if ($facture->getEtat() === 'envoyée') {
+                    $facture->setEtat('non-payée');
+                    
+                }
+            }
+        }
+        $entityManager = $this->getDoctrine()->getManager();
+        $entityManager->persist($facture);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'La vérification des factures a été effectuée avec succès.');
+        return $this->redirectToRoute('app_facture_index');
+    }
     #[Route('/', name: 'app_facture_index', methods: ['GET', 'POST'])]
     public function index(Request $request, FactureRepository $factureRepository, PdfExtractorService $pdfExtractor): Response
     {
@@ -39,13 +61,14 @@ class FactureController extends AbstractController
             $endDate = $data['endDate'];
     
             if ($request->request->has('verifier')) {
-                $pdfFile = $form->get('pdfFile')->getData();
+                $pdfFiles = $data['pdfFiles'];
     
-                // Vérifier si un fichier a été téléchargé
-                if ($pdfFile) {
-                    // Vérifier si le fichier est un PDF
+                $extractedText = '';
+    
+                foreach ($pdfFiles as $pdfFile) {
+                    /** @var UploadedFile $pdfFile */
+                    // Assurez-vous que le fichier est un PDF
                     if ($pdfFile->getClientOriginalExtension() !== 'pdf') {
-                        // Afficher un message d'erreur si le fichier n'est pas un PDF
                         $this->addFlash('error', 'Le fichier téléchargé doit être un fichier PDF.');
                         return $this->redirectToRoute('app_facture_index');
                     }
@@ -62,21 +85,22 @@ class FactureController extends AbstractController
     
                         // Extraction du texte du PDF
                         $pdfFilePath = $this->getParameter('pdf_directory').'/'.$fileName;
-                        $text = $pdfExtractor->extractText($pdfFilePath);
+                        $extractedText .= $pdfExtractor->extractText($pdfFilePath) . PHP_EOL;
     
+                        // Supprimer le fichier temporaire
                         unlink($pdfFilePath);
-    
-                        // Rediriger vers la route pour traiter toutes les factures entre les dates fournies
-                        return $this->redirectToRoute('process_extracted_textall', [
-                            'extractedText' => $text,
-                            'start_date' => $startDate->format('Y-m-d'),
-                            'end_date' => $endDate->format('Y-m-d'),
-                        ]);
-    
                     } catch (FileException $e) {
                         $this->addFlash('error', 'Une erreur s\'est produite lors du téléchargement du fichier.');
+                        return $this->redirectToRoute('app_facture_index');
                     }
                 }
+    
+                // Rediriger vers la route pour traiter toutes les factures entre les dates fournies
+                return $this->redirectToRoute('process_extracted_textall', [
+                    'extractedText' => $extractedText,
+                    'start_date' => $startDate->format('Y-m-d'),
+                    'end_date' => $endDate->format('Y-m-d'),
+                ]);
             } elseif ($request->request->has('filtrer')) {
                 if ($startDate && $endDate) {
                     $startDateObj = new \DateTime($startDate->format('Y-m-d'));
@@ -99,6 +123,7 @@ class FactureController extends AbstractController
             'endDate' => $endDate,
         ]);
     }
+    
     
 
     #[Route('/payee', name: 'app_facturepayee_index', methods: ['GET'])]
@@ -443,24 +468,6 @@ class FactureController extends AbstractController
         return $this->redirectToRoute('app_facture_show', ['id' => $facture->getId()]);
     }
 
-    #[Route('/verify-factures', name: 'verify_factures')]
-    public function verifierfacture(FactureRepository $factureRepository): Response
-    {
-        $factures = $factureRepository->findAll();
-        $dateNow = new \DateTime();
-        foreach ($factures as $facture) {
-            if ($facture->getDateEcheance() < $dateNow) {
-                if ($facture->getEtat() !== 'payée') {
-                    $facture->setEtat('non-payée');
-                    $entityManager = $this->getDoctrine()->getManager();
-                    $entityManager->persist($facture);
-                }
-            }
-        }
-        $entityManager->flush();
-
-        $this->addFlash('success', 'La vérification des factures a été effectuée avec succès.');
-        return $this->redirectToRoute('app_facture_index');
-    }
+  
 
 }

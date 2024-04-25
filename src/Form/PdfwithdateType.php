@@ -8,6 +8,7 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+
 class PdfwithdateType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -17,10 +18,16 @@ class PdfwithdateType extends AbstractType
         $endDate = $options['end_date'];
 
         $builder
-            ->add('pdfFile', FileType::class, [
-                'label' => 'Fichier PDF',
-                'required' => false,
-            ])
+ 
+        ->add('pdfFiles', FileType::class, [
+            'label' => 'Relevés bancaires',
+            'multiple' => true,
+            'required' => false,
+            'attr' => [
+                'accept' => '.pdf', // Limiter les types de fichiers acceptés aux PDF
+            ],
+        ])
+        
             ->add('startDate', DateType::class, [
                 'label' => 'Date de début',
                 'widget' => 'single_text',
