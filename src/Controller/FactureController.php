@@ -9,93 +9,117 @@ use App\Form\FactureType;
 use App\Form\PdfwithdateType;
 use App\Repository\FactureRepository;
 use App\Service\PdfExtractorService;
+use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Swift_Image;
 use Swift_Message;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 #[Route('/facture')]
 class FactureController extends AbstractController
 {
 
     #[Route('/verify-factures', name: 'verify_factures')]
-    public function verifierfacture(FactureRepository $factureRepository): Response
+    public function verifierfacture(FactureRepository $factureRepository, \Swift_Mailer $mailer, EntityManagerInterface $entityManager): Response
     {
+        $facturesNonPayees = [];
         $factures = $factureRepository->findAll();
         $dateNow = new \DateTime();
+
         foreach ($factures as $facture) {
-            if ($facture->getDateEcheance() < $dateNow) {
-                if ($facture->getEtat() === 'envoyée') {
-                    $facture->setEtat('non-payée');
-                    
-                }
+            if ($facture->getDateEcheance() < $dateNow && $facture->getEtat() === 'envoyée') {
+                $facture->setEtat('non-payée');
+                $facturesNonPayees[] = $facture; // Ajouter à la liste des factures non payées
             }
         }
-        $entityManager = $this->getDoctrine()->getManager();
         $entityManager->persist($facture);
         $entityManager->flush();
 
-        $this->addFlash('success', 'La vérification des factures a été effectuée avec succès.');
+        if (!empty($facturesNonPayees)) {
+            //contenu de l'email
+            $messageBody = '<p>Les factures suivantes ne sont pas encore payées :</p><ul>';
+
+            foreach ($facturesNonPayees as $facture) {
+                $messageBody .= '<li><strong>Facture ' . $facture->getNumfacture() . '</strong> du client <strong>' . $facture->getClient()->getNom() . '</strong> depuis le <strong>' . $facture->getDateEcheance()->format('Y-m-d') . '</strong></li>';
+            }
+
+            $messageBody .= '</ul>';
+
+            // envoie de l'email
+            $message = (new Swift_Message())
+                ->setSubject('Factures non payées')
+                ->setFrom('cherifmouhamed9242@yahoo.fr')
+                ->setTo('cherifmouhamed123@gmail.com')
+                ->setBody($messageBody, 'text/html');
+
+            try {
+                $mailer->send($message);
+                $this->addFlash('success', 'Les factures non payées ont été envoyées par e-mail avec succès.');
+            } catch (TransportExceptionInterface $e) {
+                $this->addFlash('error', 'Une erreur s\'est produite lors de l\'envoi des factures non payées par e-mail.');
+            }
+        } else {
+            $this->addFlash('info', 'Aucune facture non payée à notifier.');
+        }
+
         return $this->redirectToRoute('app_facture_index');
     }
+
     #[Route('/', name: 'app_facture_index', methods: ['GET', 'POST'])]
     public function index(Request $request, FactureRepository $factureRepository, PdfExtractorService $pdfExtractor): Response
     {
         $form = $this->createForm(PdfwithdateType::class);
         $form->handleRequest($request);
-    
+
         $startDate = null;
         $endDate = null;
         $factures = [];
-    
+
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
             $startDate = $data['startDate'];
             $endDate = $data['endDate'];
-    
+
             if ($request->request->has('verifier')) {
                 $pdfFiles = $data['pdfFiles'];
-    
+
                 $extractedText = '';
-    
+
                 foreach ($pdfFiles as $pdfFile) {
                     /** @var UploadedFile $pdfFile */
-                    // Assurez-vous que le fichier est un PDF
                     if ($pdfFile->getClientOriginalExtension() !== 'pdf') {
                         $this->addFlash('error', 'Le fichier téléchargé doit être un fichier PDF.');
                         return $this->redirectToRoute('app_facture_index');
                     }
-    
+
                     try {
-                        // Générer un nom de fichier unique
-                        $fileName = uniqid().'.'.$pdfFile->guessExtension();
-    
-                        // Déplacer le fichier vers le répertoire temporaire
+                        $fileName = uniqid() . '.' . $pdfFile->guessExtension();
                         $pdfFile->move(
                             $this->getParameter('pdf_directory'),
                             $fileName
                         );
-    
+
                         // Extraction du texte du PDF
-                        $pdfFilePath = $this->getParameter('pdf_directory').'/'.$fileName;
+                        $pdfFilePath = $this->getParameter('pdf_directory') . '/' . $fileName;
                         $extractedText .= $pdfExtractor->extractText($pdfFilePath) . PHP_EOL;
-    
-                        // Supprimer le fichier temporaire
+
+                        // Suppression du fichier temporaire
                         unlink($pdfFilePath);
                     } catch (FileException $e) {
                         $this->addFlash('error', 'Une erreur s\'est produite lors du téléchargement du fichier.');
                         return $this->redirectToRoute('app_facture_index');
                     }
                 }
-    
-                // Rediriger vers la route pour traiter toutes les factures entre les dates fournies
+
+                // Redirirection vers traitement de toutes les factures entre les dates fournies
                 return $this->redirectToRoute('process_extracted_textall', [
                     'extractedText' => $extractedText,
                     'start_date' => $startDate->format('Y-m-d'),
@@ -107,15 +131,13 @@ class FactureController extends AbstractController
                     $endDateObj = new \DateTime($endDate->format('Y-m-d'));
                     $factures = $factureRepository->findByDateRange($startDateObj, $endDateObj);
                 } else {
-                    // Si les dates ne sont pas fournies, afficher toutes les factures
                     $factures = $factureRepository->findAll();
                 }
             }
         } else {
-            // Si le formulaire n'est pas soumis ou n'est pas valide, afficher toutes les factures
             $factures = $factureRepository->findAll();
         }
-    
+
         return $this->render('facture/index.html.twig', [
             'factures' => $factures,
             'form' => $form->createView(),
@@ -123,8 +145,6 @@ class FactureController extends AbstractController
             'endDate' => $endDate,
         ]);
     }
-    
-    
 
     #[Route('/payee', name: 'app_facturepayee_index', methods: ['GET'])]
     public function indexpayee(FactureRepository $FactureRepository): Response
@@ -143,11 +163,11 @@ class FactureController extends AbstractController
     }
 
     #[Route('/new', name: 'app_facture_new', methods: ['GET', 'POST'])]
-    public function new (Request $request, FactureRepository $factureRepository): Response
+    public function new (Request $request, FactureRepository $factureRepository, EntityManagerInterface $entityManager): Response
     {
         $facture = new Facture();
 
-        $lastFactureNumber = $this->getDoctrine()->getRepository(Facture::class)->getLastFactureNumber();
+        $lastFactureNumber = $entityManager->getRepository(Facture::class)->getLastFactureNumber();
         $newFactureNumber = $lastFactureNumber + 1;
 
         $facture->setNumFacture('FAC/' . date('Y') . '/' . str_pad($newFactureNumber, 6, '0', STR_PAD_LEFT));
@@ -158,7 +178,6 @@ class FactureController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($facture);
             $entityManager->flush();
 
@@ -173,7 +192,7 @@ class FactureController extends AbstractController
     }
 
     #[Route('/addfactureline/{id}', name: 'app_facture_addline', methods: ['GET', 'POST'])]
-    public function addFactureLine(Request $request, Facture $facture): Response
+    public function addFactureLine(Request $request, Facture $facture, EntityManagerInterface $entityManager): Response
     {
         $ligneFacture = new LigneFacture();
         $form = $this->createForm(FactureLigneType::class, $ligneFacture);
@@ -182,8 +201,6 @@ class FactureController extends AbstractController
         $editfacture->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Ajoutez la ligne de facture à la facture
-
             $services = $ligneFacture->getService();
             $prestataire = $ligneFacture->getPrestataire();
             $ligneFacture->setNbJours($prestataire->getNbJours());
@@ -196,12 +213,10 @@ class FactureController extends AbstractController
             $facture->setTotalTaxe($facture->calculerTotalTaxeTVA());
             $facture->setTotalTTC($facture->calculerTotalTTC());
 
-            // Persistez la facture mise à jour dans la base de données
-            $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($facture);
             $entityManager->flush();
 
-            // Traitez la requête AJAX et renvoyez la réponse au format JSON
+            // AJAX et format JSON
             if ($request->isXmlHttpRequest()) {
                 $ligneFactureId = $ligneFacture->getId();
                 $response = [
@@ -244,20 +259,18 @@ class FactureController extends AbstractController
     }
 
     #[Route('/Setmanuelp/{id}', name: 'set_facture_payée', methods: ['GET'])]
-    public function setfacturepayee(Facture $facture): Response
+    public function setfacturepayee(Facture $facture,EntityManagerInterface $entityManager): Response
     {
         $facture->SetEtat('payée');
-        $entityManager = $this->getDoctrine()->getManager();
         $entityManager->persist($facture);
         $entityManager->flush();
         return $this->redirectToRoute('app_facture_index', [], Response::HTTP_SEE_OTHER);
     }
 
     #[Route('/Setmanuelnp/{id}', name: 'set_facture_nonpayée', methods: ['GET'])]
-    public function setfacturenonpayee(Facture $facture): Response
+    public function setfacturenonpayee(Facture $facture,EntityManagerInterface $entityManager): Response
     {
         $facture->SetEtat('non-payée');
-        $entityManager = $this->getDoctrine()->getManager();
         $entityManager->persist($facture);
         $entityManager->flush();
         return $this->redirectToRoute('app_facture_index', [], Response::HTTP_SEE_OTHER);
@@ -272,7 +285,7 @@ class FactureController extends AbstractController
 
         // Afficher la facture avec le contenu SVG
         return $this->render('facture/efactur-x.html.twig', [
-            'svgContent' => $svgContent, // Passer le contenu SVG à la vue
+            'svgContent' => $svgContent,
             'facture' => $facture,
         ]);
     }
@@ -289,7 +302,7 @@ class FactureController extends AbstractController
         '<TotalTTC>' . htmlspecialchars($facture->getTotalTTC()) . '</TotalTTC>' . "\n" .
         '<TotalTaxe>' . htmlspecialchars($facture->getTotalTaxe()) . '</TotalTaxe>' . "\n";
 
-        // Ajouter les lignes de facture
+        // les lignes de facture
         foreach ($facture->getLignesFacture() as $ligneFacture) {
             $xmlContent .= '<LigneFacture>' . "\n";
             $xmlContent .= '<Description>' . htmlspecialchars($ligneFacture->getDescription()) . '</Description>' . "\n";
@@ -331,9 +344,8 @@ class FactureController extends AbstractController
     }
 
     #[Route('/line/{id}', name: 'delete_ligne_facture', methods: ['POST'])]
-    public function deleteLigneFacture(Request $request, int $id): JsonResponse
+    public function deleteLigneFacture(Request $request, int $id,EntityManagerInterface $entityManager): JsonResponse
     {
-        $entityManager = $this->getDoctrine()->getManager();
 
         $ligneFacture = $entityManager->find(LigneFacture::class, $id);
 
@@ -348,7 +360,7 @@ class FactureController extends AbstractController
     }
 
     #[Route('/sendemail/{id}', name: 'send_facture_email', methods: ['GET', 'POST'])]
-    public function sendemail($id, Request $request, Facture $facture, \Swift_Mailer $mailer)
+    public function sendemail($id, Request $request, Facture $facture, \Swift_Mailer $mailer,EntityManagerInterface $entityManager)
     {
 
         $options = new Options();
@@ -396,7 +408,6 @@ class FactureController extends AbstractController
             $mailer->send($message);
             $this->addFlash('success', 'La facture a été envoyée par e-mail avec succès.');
             $facture->setEtat("envoyée");
-            $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($facture);
             $entityManager->flush();
         } catch (TransportExceptionInterface $e) {
@@ -408,7 +419,7 @@ class FactureController extends AbstractController
     }
 
     #[Route('/sendfacturx/{id}', name: 'send_facturx_email', methods: ['GET', 'POST'])]
-    public function sendemailxfactur($id, Request $request, Facture $facture, \Swift_Mailer $mailer): Response
+    public function sendemailxfactur($id, Request $request, Facture $facture, \Swift_Mailer $mailer,EntityManagerInterface $entityManager): Response
     {
         $xmlContent = $this->generateXmlContent($facture);
         $svgContent = $this->generateSvgContent($xmlContent);
@@ -458,7 +469,6 @@ class FactureController extends AbstractController
             $mailer->send($message);
             $this->addFlash('success', 'La facture a été envoyée par e-mail avec succès.');
             $facture->setEtat("envoyée");
-            $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($facture);
             $entityManager->flush();
         } catch (TransportExceptionInterface $e) {
@@ -467,7 +477,5 @@ class FactureController extends AbstractController
 
         return $this->redirectToRoute('app_facture_show', ['id' => $facture->getId()]);
     }
-
-  
 
 }

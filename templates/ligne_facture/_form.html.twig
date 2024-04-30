@@ -28,7 +28,7 @@
         </div>
     </div>
 
-    <div class="col-md-6" style="display:none;">
+    <div class="col-md-6" >
         <div class="form-group">
             {{ form_label(facture.dateEcheance) }}
             {{ form_widget(facture.dateEcheance, {'attr': {'class': 'form-control', 'id': 'dateEcheance'}}) }}
@@ -37,7 +37,7 @@
 
 
 <div class="col-md-6">
-        <div class="form-group">
+        <div class="form-group" style="display:none;">
             {{ form_label(facture.delaiPaiement) }}
             {{ form_widget(facture.delaiPaiement, {'attr': {'class': 'form-control', 'id': 'dateEcheance'}}) }}
         </div>

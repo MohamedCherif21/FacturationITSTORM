@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier client{% endblock %}
+
+{% block body %}
+    <h1>Modifier client</h1>
+
+    {{ form_start(form) }}
+        {{ form_row(form.nom) }}
+        {{ form_row(form.email) }}
+        {{ form_row(form.numtel) }}
+        {{ form_row(form.adresse) }}
+        <button type="submit">Modifier</button>
+    {{ form_end(form) }}
+
+    <a href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
+{% endblock %}

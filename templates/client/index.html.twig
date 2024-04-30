@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Clients{% endblock %}
+
+{% block body %}
+    <h1>Liste des clients</h1>
+    <hr/>
+    <div>
+        <a class="btn btn-primary" href="{{ path('app_client_new') }}"><span class="fas fa-plus"></span>  Nouveau client</a>
+    </div>
+    
+    <table style="padding-top:40px"class="table">
+        <thead>
+            <tr>
+                <th scope="col">Nom</th>
+                <th scope="col">Email</th>
+                <th scope="col">Numéro de téléphone</th>
+                <th scope="col">Adresse</th>
+                <th scope="col">Contrat</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+                <tr>
+                    <td><a href="{{ path('client_show', {'id': client.id}) }}">{{ client.nom }}</a></td>
+                    <td>{{ client.email }}</td>
+                    <td>{{ client.numtel }}</td>
+                    <td>{{ client.adresse }}</td>
+                    <td>{{ client.contrat }}</td>
+                    <td >
+                    <button type="button" class="btn btn-default btn-sm dropdown-toggle dropdown-icon"
+                        data-toggle="dropdown">
+                        Action
+                        <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <div class="dropdown-menu" role="menu">
+
+                        <div class="dropdown-divider"></div>
+                        <a class="btn btn-secondary" href="{{ path('client_show', {'id': client.id}) }}"><i
+                            class="fas fa-eye"></i>    Voir</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="btn btn-primary" href="{{ path('client_edit', {'id': client.id}) }}"><span
+                            class="fas fa-edit"></span> Modifier</a>
+                        <div class="dropdown-divider"></div>
+                        <form action="{{ path('client_delete', {'id': client.id}) }}" method="post" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce client ?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ client.id) }}">
+                            <button type="submit" class="btn btn-danger"><span
+                            class="fas fa-trash"></span> Supprimer</button>
+                        </form>              
+                    </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

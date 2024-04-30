@@ -33,7 +33,6 @@ class FactureType extends AbstractType
             'label' => 'Echéance',
             'choices' => [
                 '15 jours' => 15,
-                '20 jours' => 20,
                 '30 jours' => 30,
                 '45 jours' => 45,
                 '60 jours' => 60,

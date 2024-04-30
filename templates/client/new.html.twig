@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau client{% endblock %}
+
+{% block body %}
+{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+    <h1>Nouveau client</h1>
+    <hr>
+      {{ form_label(form.nom) }}
+    {{ form_widget(form.nom, {'attr': {'class': 'form-control col-md-4'}}) }}
+    {{ form_errors(form.nom) }}
+
+    {{ form_label(form.email) }}
+    {{ form_widget(form.email, {'attr': {'class': 'form-control col-md-4'}}) }}
+    {{ form_errors(form.email) }}
+
+    {{ form_label(form.siret) }}
+    {{ form_widget(form.siret, {'attr': {'class': 'form-control col-md-4'}}) }}
+    {{ form_errors(form.siret) }}
+
+    {{ form_label(form.numtel) }}
+    {{ form_widget(form.numtel, {'attr': {'class': 'form-control col-md-4'}}) }}
+    {{ form_errors(form.numtel) }}
+
+    {{ form_label(form.adresse) }}
+    {{ form_widget(form.adresse, {'attr': {'class': 'form-control col-md-4'}}) }}
+    {{ form_errors(form.adresse) }}
+
+
+
+    <hr/>
+    <a class="btn btn-dark" href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
+    <button class="btn btn-success">{{ button_label|default('Save') }}</button>
+
+{% endblock %}

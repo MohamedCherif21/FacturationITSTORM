@@ -7,6 +7,7 @@ use App\Form\PdfwithdateType;
 use App\Repository\FactureRepository;
 use App\Service\PdfExtractorService;
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
@@ -64,7 +65,7 @@ class PdfController extends AbstractController
     }
 
     #[Route('/process-extracted-text/{id}', name: 'process_extracted_text')]
-    public function processExtractedText(Request $request, FactureRepository $factureRepository, int $id): Response
+    public function processExtractedText(Request $request, FactureRepository $factureRepository, int $id,EntityManagerInterface $entityManager): Response
     {
         $extractedText = $request->query->get('extractedText');
         $facture = $factureRepository->find($id);
@@ -118,7 +119,6 @@ class PdfController extends AbstractController
         }
 
         // Enregistrez les modifications dans la base de données
-        $entityManager = $this->getDoctrine()->getManager();
         $entityManager->persist($facture);
         $entityManager->flush();
 
@@ -139,7 +139,7 @@ class PdfController extends AbstractController
     }
 
     #[Route('/process-extracted-text-all', name: 'process_extracted_textall')]
-    public function processExtractedTextAllFacture(Request $request, FactureRepository $factureRepository): Response
+    public function processExtractedTextAllFacture(Request $request, FactureRepository $factureRepository, EntityManagerInterface $entityManager): Response
     {
         // Obtenez les dates de début et de fin à partir de la requête
         $startDate = new DateTime($request->query->get('start_date'));
@@ -201,7 +201,6 @@ class PdfController extends AbstractController
             return $this->redirectToRoute('app_facture_index');
         }
         // Enregistrez les modifications dans la base de données
-        $entityManager = $this->getDoctrine()->getManager();
         $entityManager->flush();
 
         // Redirigez l'utilisateur après avoir mis à jour toutes les factures

@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails du client{% endblock %}
+
+{% block body %}
+    <h1>Détails du client</h1>
+    <hr/>
+    <div style="display:flex;">
+     <img src="{{ asset('img/client.png') }}" alt="Logo" style="width: 130px; height: 150px;">
+     <h3 style="padding-top: 70px;"><strong>{{ client.nom }}</strong></h3>
+    </div>
+    <br/>
+    
+    <div style="padding-top: 40px;">
+        <p><strong>Email:</strong> {{ client.email }}</p>
+        <p><strong>Numéro de téléphone:</strong> {{ client.numtel }}</p>
+        <p><strong>Adresse:</strong> {{ client.adresse }}</p>
+        <p><strong>Contrat:</strong> {{ client.contrat }}</p>
+    </div>
+
+    <hr/>
+    <div>
+        <a class="btn btn-dark" href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
+        <a  class="btn btn-primary" href="{{ path('client_edit', {'id': client.id}) }}">Modifier</a> 
+    </div>
+{% endblock %}

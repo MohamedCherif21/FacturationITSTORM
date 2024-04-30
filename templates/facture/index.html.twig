@@ -1,5 +1,4 @@
-{% extends 'basefront.html.twig' %}
-
+{% extends 'base.html.twig' %}
 {% block title %}
 {% if startDate and endDate %}
 Factures entre {{ startDate|date('Y-m-d') }} et {{ endDate|date('Y-m-d') }}
@@ -41,7 +40,7 @@ Factures
     }
 </style>
 
-    <h1 style="text-align: center;">Liste des Factures</h1>
+    <h1>Liste des Factures</h1>
 <hr />
 
 {# Formulaire de saisie des dates et de téléchargement du PDF #}
@@ -94,9 +93,7 @@ Factures
 </div>
 {{ form_end(form) }}
 
-<hr />
-<hr />
-<table border=2,class="table">
+<table class="table" id="datatable">
     <thead>
         <tr>
             <th>N° Facture</th>
@@ -140,7 +137,7 @@ Factures
                     <i class="{{ iconClass }}"></i> {{ facture.etat }}
                 </span>
             </td>
-            <td align="center">
+            <td >
                 <button type="button" class="btn btn-default btn-sm dropdown-toggle dropdown-icon"
                     data-toggle="dropdown">
                     Action
@@ -203,6 +200,7 @@ Factures
                             class="fas fa-file-invoice"></i> Envoyer factur-x</a>
                     {% endif %}
                 </div>
+            </td>
 
         </tr>
         {% else %}
@@ -212,4 +210,13 @@ Factures
         {% endfor %}
     </tbody>
 </table>
+   <script>
+       $(function () {
+           $("#datatable").DataTable({
+               "responsive": true, "lengthChange": false, "autoWidth": false,
+               "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+           }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+
+       });
+   </script>
 {% endblock %}
