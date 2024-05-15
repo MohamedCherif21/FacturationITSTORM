@@ -24,7 +24,7 @@ class FactureType extends AbstractType
         ->add('client')
         ->add('dateFacturation', DateType::class, [
             'widget' => 'single_text',
-            'data' => $dateFacturation,
+            // 'data' => $dateFacturation,
             'label' => 'Date de facturation',
             'label_attr' => ['class' => 'form-label'], 
             'attr' => ['class' => 'form-control'],
@@ -42,7 +42,7 @@ class FactureType extends AbstractType
 
         ->add('dateEcheance', DateType::class, [
             'widget' => 'single_text',
-            'data' => $dateEcheance,
+            // 'data' => $dateEcheance,
             'label' => 'Date d\'échéance',
             'label_attr' => ['class' => 'form-label'],
             'attr' => ['class' => 'form-control'],

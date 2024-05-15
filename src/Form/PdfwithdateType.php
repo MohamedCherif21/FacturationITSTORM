@@ -13,7 +13,6 @@ class PdfwithdateType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        // Get the initial values for startDate and endDate
         $startDate = $options['start_date'];
         $endDate = $options['end_date'];
 
@@ -24,26 +23,25 @@ class PdfwithdateType extends AbstractType
             'multiple' => true,
             'required' => false,
             'attr' => [
-                'accept' => '.pdf', // Limiter les types de fichiers acceptés aux PDF
+                'accept' => '.pdf', 
             ],
         ])
         
             ->add('startDate', DateType::class, [
-                'label' => 'Date de début',
+                'label' => 'Du',
                 'widget' => 'single_text',
-                'data' => $startDate, // Set the initial value for startDate
+                'data' => $startDate, 
             ])
             ->add('endDate', DateType::class, [
-                'label' => 'Date de fin',
+                'label' => 'Jusqu\'au',
                 'widget' => 'single_text',
-                'data' => $endDate, // Set the initial value for endDate
+                'data' => $endDate, 
             ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            // Set the default values for startDate and endDate to null
             'start_date' => null,
             'end_date' => null,
         ]);

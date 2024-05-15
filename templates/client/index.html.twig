@@ -3,10 +3,10 @@
 {% block title %}Clients{% endblock %}
 
 {% block body %}
-    <h1>Liste des clients</h1>
+    <h2>Liste des clients</h2>
     <hr/>
     <div>
-        <a class="btn btn-primary" href="{{ path('app_client_new') }}"><span class="fas fa-plus"></span>  Nouveau client</a>
+        <a class="btn btn-primary" href="{{ path('app_client_new') }}"><span class="fas fa-plus"></span>  Ajouter client</a>
     </div>
     
     <table style="padding-top:40px"class="table">
@@ -16,7 +16,7 @@
                 <th scope="col">Email</th>
                 <th scope="col">Numéro de téléphone</th>
                 <th scope="col">Adresse</th>
-                <th scope="col">Contrat</th>
+                <th scope="col">N°Siret</th>
                 <th scope="col">Actions</th>
             </tr>
         </thead>
@@ -27,7 +27,7 @@
                     <td>{{ client.email }}</td>
                     <td>{{ client.numtel }}</td>
                     <td>{{ client.adresse }}</td>
-                    <td>{{ client.contrat }}</td>
+                    <td>{{ client.siret }}</td>
                     <td >
                     <button type="button" class="btn btn-default btn-sm dropdown-toggle dropdown-icon"
                         data-toggle="dropdown">

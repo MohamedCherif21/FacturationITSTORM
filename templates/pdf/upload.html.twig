@@ -11,10 +11,23 @@
     </div>
 {% endfor %}
 
-    <h1>Télécharger un fichier PDF</h1>
+    <h2>Télécharger PDF</h2>
+    <hr/>
 
     {{ form_start(form) }}
-    {{ form_row(form.pdfFiles) }}
-    <button type="submit" class="btn btn-primary">Vérifier</button>
+    <div >
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.pdfFiles) }}
+                {{ form_widget(form.pdfFiles, {'attr': {'class': 'form-control', 'multiple': true}}) }}
+                {{ form_errors(form.pdfFiles) }}
+            </div>
+
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary">Vérifier</button>
+        </div> 
+    </div> 
+   
     {{ form_end(form) }}
 {% endblock %}

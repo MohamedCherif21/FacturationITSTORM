@@ -26,4 +26,5 @@ services:
             - '../src/Kernel.php'
 
     App\Scheduler\VerifEcheance:
-        tags: [scheduler.provider]
+        tags:
+            - { name: 'scheduler.task', expression: '0 11 * * *' }

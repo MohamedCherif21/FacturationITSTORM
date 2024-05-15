@@ -26,7 +26,6 @@ class FactureLigneType extends AbstractType
                 ],
                 // Valeur par défaut à 20%
                 'data' => 20,
-                // Affichage sous forme de liste déroulante
                 'expanded' => false,
                 'multiple' => false,
             ])

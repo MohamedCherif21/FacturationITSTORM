@@ -18,28 +18,25 @@ class PdfController extends AbstractController
 {
 
     #[Route('/upload-pdf/{id}', name: 'upload_pdf')]
-    public function uploadPdf(Request $request, PdfExtractorService $pdfExtractor, int $id): Response
-    {
-        $form = $this->createForm(PdfType::class);
-        $form->handleRequest($request);
+public function uploadPdf(Request $request, PdfExtractorService $pdfExtractor, int $id): Response
+{
+    $form = $this->createForm(PdfType::class);
+    $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $pdfFile = $form->get('pdfFile')->getData();
+    if ($form->isSubmitted() && $form->isValid()) {
+        $pdfFiles = $form->get('pdfFiles')->getData();
 
-            // Vérifiez si un fichier a été téléchargé
-            if ($pdfFile) {
-                // Vérifiez si le fichier est un PDF
+        // Vérifiez si un fichier a été téléchargé
+        if (count($pdfFiles) > 0) {
+            foreach ($pdfFiles as $pdfFile) {
+                /** @var UploadedFile $pdfFile */
                 if ($pdfFile->getClientOriginalExtension() !== 'pdf') {
-                    // Affichez un message d'erreur si le fichier n'est pas un PDF
                     $this->addFlash('error', 'Le fichier téléchargé doit être un fichier PDF.');
-                    return $this->redirectToRoute('upload_pdf', ['id' => $id]);
+                    return $this->redirectToRoute('app_facture_index');
                 }
 
                 try {
-                    // Générez un nom de fichier unique
                     $fileName = uniqid() . '.' . $pdfFile->guessExtension();
-
-                    // Déplacez le fichier vers le répertoire temporaire
                     $pdfFile->move(
                         $this->getParameter('pdf_directory'),
                         $fileName
@@ -47,22 +44,26 @@ class PdfController extends AbstractController
 
                     // Extraction du texte du PDF
                     $pdfFilePath = $this->getParameter('pdf_directory') . '/' . $fileName;
-                    $text = $pdfExtractor->extractText($pdfFilePath);
+                    $extractedText = $pdfExtractor->extractText($pdfFilePath);
 
+                    // Suppression du fichier temporaire
                     unlink($pdfFilePath);
 
-                    return $this->redirectToRoute('process_extracted_text', ['extractedText' => $text, 'id' => $id]);
-                    //return $this->redirectToRoute('process_extracted_textall', ['extractedText' => $text]);
+                    return $this->redirectToRoute('process_extracted_text', ['extractedText' => $extractedText, 'id' => $id]);
                 } catch (FileException $e) {
                     $this->addFlash('error', 'Une erreur s\'est produite lors du téléchargement du fichier.');
                 }
             }
+        } else {
+            $this->addFlash('error', 'Aucun fichier PDF n\'a été téléchargé.');
         }
-
-        return $this->render('pdf/upload.html.twig', [
-            'form' => $form->createView(),
-        ]);
     }
+
+    return $this->render('pdf/upload.html.twig', [
+        'form' => $form->createView(),
+    ]);
+}
+
 
     #[Route('/process-extracted-text/{id}', name: 'process_extracted_text')]
     public function processExtractedText(Request $request, FactureRepository $factureRepository, int $id,EntityManagerInterface $entityManager): Response

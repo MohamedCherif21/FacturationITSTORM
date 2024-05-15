@@ -1,5 +1,16 @@
 {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
 <hr/>
+{% for message in app.flashes('success') %}
+<div class="alert alert-success">
+    {{ message }}
+</div>
+{% endfor %}
+{% for message in app.flashes('error') %}
+<div class="alert alert-danger">
+    {{ message }}
+</div>
+{% endfor %}
+
     {{ form_label(form.numFacture) }}
     {{ form_widget(form.numFacture, {'attr': {'class': 'form-control', 'readonly': 'readonly'}}) }}
     {{ form_errors(form.numFacture) }}

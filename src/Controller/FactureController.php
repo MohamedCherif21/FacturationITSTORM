@@ -48,7 +48,7 @@ class FactureController extends AbstractController
             $messageBody = '<p>Les factures suivantes ne sont pas encore payées :</p><ul>';
 
             foreach ($facturesNonPayees as $facture) {
-                $messageBody .= '<li><strong>Facture ' . $facture->getNumfacture() . '</strong> du client <strong>' . $facture->getClient()->getNom() . '</strong> depuis le <strong>' . $facture->getDateEcheance()->format('Y-m-d') . '</strong></li>';
+                $messageBody .= '<li><strong>Facture ' . $facture->getNumfacture() . '</strong> du client <strong>' . $facture->getClient()->getNom() . '</strong>, échéance <strong>' . $facture->getDateEcheance()->format('Y-m-d') . '</strong> (retard de <strong>' . $facture->getNbJoursRetard() . '</strong> jours).</li>';
             }
 
             $messageBody .= '</ul>';
@@ -79,8 +79,9 @@ class FactureController extends AbstractController
         $form = $this->createForm(PdfwithdateType::class);
         $form->handleRequest($request);
 
-        $startDate = null;
-        $endDate = null;
+        // Initialisation des variables
+        $startDate = new \DateTime(date('Y-01-01')); // Début de l'année en cours
+        $endDate = new \DateTime(date('Y-m-t')); // Fin du mois en cours
         $factures = [];
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -119,7 +120,7 @@ class FactureController extends AbstractController
                     }
                 }
 
-                // Redirirection vers traitement de toutes les factures entre les dates fournies
+                // Redirection vers traitement de toutes les factures entre les dates fournies
                 return $this->redirectToRoute('process_extracted_textall', [
                     'extractedText' => $extractedText,
                     'start_date' => $startDate->format('Y-m-d'),
@@ -127,9 +128,7 @@ class FactureController extends AbstractController
                 ]);
             } elseif ($request->request->has('filtrer')) {
                 if ($startDate && $endDate) {
-                    $startDateObj = new \DateTime($startDate->format('Y-m-d'));
-                    $endDateObj = new \DateTime($endDate->format('Y-m-d'));
-                    $factures = $factureRepository->findByDateRange($startDateObj, $endDateObj);
+                    $factures = $factureRepository->findByDateRange($startDate, $endDate);
                 } else {
                     $factures = $factureRepository->findAll();
                 }
@@ -143,24 +142,26 @@ class FactureController extends AbstractController
             'form' => $form->createView(),
             'startDate' => $startDate,
             'endDate' => $endDate,
+            'facturespayee' => $factureRepository->findPayeeFactures(),
+            'facturesimpayee' => $factureRepository->findNonPayeeFactures(),
         ]);
     }
 
-    #[Route('/payee', name: 'app_facturepayee_index', methods: ['GET'])]
-    public function indexpayee(FactureRepository $FactureRepository): Response
-    {
-        return $this->render('facture/indexPayee.html.twig', [
-            'factures' => $FactureRepository->findPayeeFactures(),
-        ]);
-    }
+    // #[Route('/payee', name: 'app_facturepayee_index', methods: ['GET'])]
+    // public function indexpayee(FactureRepository $FactureRepository): Response
+    // {
+    //     return $this->render('facture/indexPayee.html.twig', [
+    //         'factures' => $FactureRepository->findPayeeFactures(),
+    //     ]);
+    // }
 
-    #[Route('/impayee', name: 'app_factureimpayee_index', methods: ['GET'])]
-    public function indeximpaye(FactureRepository $FactureRepository): Response
-    {
-        return $this->render('facture/indeximpayee.html.twig', [
-            'factures' => $FactureRepository->findNonPayeeFactures(),
-        ]);
-    }
+    // #[Route('/impayee', name: 'app_factureimpayee_index', methods: ['GET'])]
+    // public function indeximpaye(FactureRepository $FactureRepository): Response
+    // {
+    //     return $this->render('facture/indeximpayee.html.twig', [
+    //         'factures' => $FactureRepository->findNonPayeeFactures(),
+    //     ]);
+    // }
 
     #[Route('/new', name: 'app_facture_new', methods: ['GET', 'POST'])]
     public function new (Request $request, FactureRepository $factureRepository, EntityManagerInterface $entityManager): Response
@@ -453,8 +454,10 @@ class FactureController extends AbstractController
 
         $messageBody = '
         <p>Bonjour,</p>
+        <br>
         <p>Veuillez trouver ci-joint les factures liées à nos prestations, pour la période indiquée dans l\'objet de ce mail.</p>
         <p>En attendant, nous restons à votre disposition pour tout complément d\'information.</p>
+        <br>
         ' . $signatureHTML;
 
         $message = (new Swift_Message())
@@ -476,6 +479,70 @@ class FactureController extends AbstractController
         }
 
         return $this->redirectToRoute('app_facture_show', ['id' => $facture->getId()]);
+    }
+
+    #[Route('/sendrappel/{id}', name: 'send_rappel_email', methods: ['GET', 'POST'])]
+    public function sendrappel($id, Request $request, Facture $facture, \Swift_Mailer $mailer,EntityManagerInterface $entityManager)
+    {
+
+        $options = new Options();
+        $options->set('isPhpEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+
+        $dompdf = new Dompdf($options);
+
+        $html = $this->renderView('facture/efacture.html.twig', ['facture' => $facture]);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $pdfContent = $dompdf->output();
+
+        $pdfAttachment = new \Swift_Attachment($pdfContent, 'facture.pdf', 'application/pdf');
+
+        $subject = '[IT Storm Consulting] Retard de paiement facture - ' . $facture->getNumfacture() . ' - ' . $facture->getClient()->getNom();
+        
+        $imageUrl = 'http://localhost:8000/img/itstormsig.jpg';
+
+        $signatureImage = (new Swift_Image($imageUrl))->setFilename('signature.png');
+        $totalTTC = $facture->getTotalTTC(); // Extract integer value from Facture object
+        $formattedTotalTTC = number_format($totalTTC, 2, ',', ' ');
+
+        $signatureHTML = '
+    <p>Bien Cordialement,</p>
+    <p style="margin: 0;">Farhat THABET, PhD</p>
+    <p style="margin: 0;">Président IT STORM Consulting</p>
+    <img src="' . $imageUrl . '" alt="Signature">';
+
+        $messageBody = '
+    <p>Bonjour,</p>
+    <br>
+    <p>Sauf erreur ou omission de notre part, nous constatons que votre compte client présente à ce jour un solde débiteur de : ' .$formattedTotalTTC .' £ .</p>
+    <p>Ce montant correspond à notre facture en pièce jointe restée impayée.</p>
+    <p>L\'échéance étant dépassée, nous vous demandons de bien vouloir régulariser cette situation. Dans le cas où votre règlement aurait été adressé entre temps, nous vous prions de ne pas tenir compte de la présente.</p>
+    <br>
+    ' . $signatureHTML;
+
+        $message = (new Swift_Message())
+            ->setSubject($subject)
+            ->setFrom('cherifmouhamed9242@yahoo.fr')
+            ->setTo('cherifmouhamed123@gmail.com')
+            ->setBody($messageBody, 'text/html');
+
+        $message->attach($pdfAttachment);
+
+        try {
+            $mailer->send($message);
+            $this->addFlash('success', 'La facture a été réenvoyée par e-mail avec succès.');
+            $facture->setEtat("envoyée");
+            $entityManager->persist($facture);  
+            $entityManager->flush();
+        } catch (TransportExceptionInterface $e) {
+            $this->addFlash('error', 'Une erreur s\'est produite lors de l\'envoi de la facture par e-mail.');
+        }
+        $this->addFlash('success', 'La facture ' . $facture->getNumfacture() . ' est envoyée avec succés à ' . $facture->getClient()->getNom());
+
+        return $this->redirectToRoute('app_facture_index');
     }
 
 }

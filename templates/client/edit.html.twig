@@ -3,15 +3,20 @@
 {% block title %}Modifier client{% endblock %}
 
 {% block body %}
-    <h1>Modifier client</h1>
-
+    <h2>Modifier client</h2>
+ <hr/>
     {{ form_start(form) }}
-        {{ form_row(form.nom) }}
-        {{ form_row(form.email) }}
-        {{ form_row(form.numtel) }}
-        {{ form_row(form.adresse) }}
-        <button type="submit">Modifier</button>
+        {{ form_row(form.nom, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_row(form.email, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_row(form.numtel, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_row(form.adresse, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_row(form.siret, {'attr': {'class': 'form-control col-md-4'}}) }}
+    
+
+    
+    <hr/>
+    <a class="btn btn-dark" href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
+    <button type="submit" class="btn btn-success">modifier</button>
     {{ form_end(form) }}
 
-    <a href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
 {% endblock %}

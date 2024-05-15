@@ -85,6 +85,14 @@ class Facture
         return $this;
     }
 
+    public function getNbJoursRetard()
+    {
+        $currentDate = date_create();
+        $dueDateTime = $this->getDateEcheance();
+        $diffInDays = date_diff($dueDateTime, $currentDate)->format('%a');
+        return abs($diffInDays);
+    }
+
     public function getDelaiPaiement(): ?int
     {
         return $this->delaiPaiement;

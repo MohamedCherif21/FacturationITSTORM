@@ -21,7 +21,7 @@
   <link href="{{asset("libraries/boxicons/css/boxicons.min.css")}}" rel="stylesheet">
   <link href="{{asset("libraries/venobox/venobox.css")}}" rel="stylesheet">
   <link href="{{asset("libraries/aos/aos.css")}}" rel="stylesheet">
-    <link href="{{asset('img/favicon.png')}}" rel="icon">
+    <link href="{{asset('img/itstormlogo.png')}}" rel="icon">
   <link href="{{asset('img/logo.png')}}" rel="logo">
     <script src="{{asset('https://use.fontawesome.com/releases/v6.1.0/js/all.js')}}" crossorigin="anonymous"></script>
       <link href="{{asset("css/style.css")}}" rel="stylesheet">
@@ -31,6 +31,7 @@
 <body class="sb-nav-fixed">
     <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
         <!-- Navbar Brand-->
+             <img src="{{ asset('img/itstormlogo.png') }}">
         <a class="navbar-brand ps-3" href="{{asset('index.html')}}">IT-STORM</a>    
         <!-- Sidebar Toggle-->
         <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="{{asset('#!')}}"><i
@@ -74,21 +75,15 @@
                             </a>
                         </li>
 
-                        <a class="nav-link collapsed" href="{{asset('#')}}" data-bs-toggle="collapse"
-                            data-bs-target="#collapseLayouts" aria-expanded="false" aria-controls="collapseLayouts">
-                            <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
-                            Facturation
-                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
-                        </a>
-                        <div class="collapse" id="collapseLayouts" aria-labelledby="headingOne"
-                            data-bs-parent="#sidenavAccordion">
-                            <nav class="sb-sidenav-menu-nested nav">
-                                <a class="nav-link" href="{{ path('app_facture_new') }}">Nouveau</a>
-                                <a class="nav-link" href="{{ path('app_facture_index') }}">Synthèse</a>
-                                <a class="nav-link" href="{{ path('app_factureimpayee_index') }}">Non Payées</a>
-                                <a class="nav-link" href="{{ path('app_facturepayee_index') }}">Payées</a>
-                            </nav>
-                        </div>
+                    
+                         <li class="nav-item">
+                            <a class="nav-link" href="{{ path('app_facture_index') }}">
+                                 <div class="sb-nav-link-icon"><i class="fas fa-file-lines"></i></div>
+                               
+                                    Factures
+
+                            </a>
+                        </li>
 
                          <li class="nav-item">
                             <a class="nav-link" href="{{ path('app_client_index') }}">
@@ -158,8 +153,11 @@
     <script src="{{asset("libraries/isotope-layout/isotope.pkgd.min.js")}}"></script>
     <script src="{{asset("libraries/venobox/venobox.min.js")}}"></script>
     <script src="{{asset("libraries/aos/aos.js")}}"></script>
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script src="//cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
+    <script src="//cdn.datatables.net/2.0.7/css/dataTables.dataTables.min.css"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.20.0/jquery.validate.min.js" integrity="sha512-WMEKGZ7L5LWgaPeJtw9MBM4i5w5OSBlSjTjCtSnvFJGSVD26gE5+Td12qN5pvWXhuWaWcVwF++F7aqu9cvqP0A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js" integrity="sha512-xq+Vm8jC94ynOikewaQXMEkJIOBp7iArs3IhFWSWdRT3Pq8wFz46p+ZDFAR7kHnSFf+zUv52B3prRYnbDRdgog==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </body>
 
 </html>

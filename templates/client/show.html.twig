@@ -3,7 +3,7 @@
 {% block title %}Détails du client{% endblock %}
 
 {% block body %}
-    <h1>Détails du client</h1>
+    <h2>Détails du client</h2>
     <hr/>
     <div style="display:flex;">
      <img src="{{ asset('img/client.png') }}" alt="Logo" style="width: 130px; height: 150px;">
@@ -15,7 +15,7 @@
         <p><strong>Email:</strong> {{ client.email }}</p>
         <p><strong>Numéro de téléphone:</strong> {{ client.numtel }}</p>
         <p><strong>Adresse:</strong> {{ client.adresse }}</p>
-        <p><strong>Contrat:</strong> {{ client.contrat }}</p>
+        <p><strong>N°Siret:</strong> {{ client.siret }}</p>
     </div>
 
     <hr/>
