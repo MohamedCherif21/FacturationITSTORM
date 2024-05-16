@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\EmailTemplate;
 use App\Entity\Facture;
 use App\Entity\LigneFacture;
+use App\Form\EmailTemplateType;
 use App\Form\FactureLigneType;
 use App\Form\FactureType;
 use App\Form\PdfwithdateType;
@@ -74,44 +76,64 @@ class FactureController extends AbstractController
     }
 
     #[Route('/', name: 'app_facture_index', methods: ['GET', 'POST'])]
-    public function index(Request $request, FactureRepository $factureRepository, PdfExtractorService $pdfExtractor): Response
+    public function index(Request $request, FactureRepository $factureRepository, PdfExtractorService $pdfExtractor, EntityManagerInterface $entityManager): Response
     {
+        // Création du formulaire d'édition d'email
+        $emailTemplate = new EmailTemplate(); // Créez une nouvelle instance de EmailTemplate
+        $formemail = $this->createForm(EmailTemplateType::class, $emailTemplate);
+        $formemail->handleRequest($request);
+    
+        if ($formemail->isSubmitted() && $formemail->isValid()) {
+            $entityManager->persist($emailTemplate);
+            $entityManager->flush();
+        }
+    
+        $selectedFactureId = $request->get('facture_id');
+        if ($selectedFactureId) {
+            // Récupérer la facture sélectionnée depuis la base de données
+            $selectedFacture = $factureRepository->find($selectedFactureId);
+    
+            if ($selectedFacture) {
+                // Pré-remplir l'objet de l'e-mail avec les informations de la facture sélectionnée
+                $emailTemplate->setSubject("facture : " . $selectedFacture->getNumFacture() . " - " . $selectedFacture->getClient()->getNom() . " - " . $selectedFacture->getDateFacturation()->format('Y-m-d'));
+            }
+        }
+    
         $form = $this->createForm(PdfwithdateType::class);
         $form->handleRequest($request);
-
+    
         // Initialisation des variables
         $startDate = new \DateTime(date('Y-01-01')); // Début de l'année en cours
         $endDate = new \DateTime(date('Y-m-t')); // Fin du mois en cours
         $factures = [];
-
+    
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
             $startDate = $data['startDate'];
             $endDate = $data['endDate'];
-
+    
             if ($request->request->has('verifier')) {
                 $pdfFiles = $data['pdfFiles'];
-
                 $extractedText = '';
-
+    
                 foreach ($pdfFiles as $pdfFile) {
                     /** @var UploadedFile $pdfFile */
                     if ($pdfFile->getClientOriginalExtension() !== 'pdf') {
                         $this->addFlash('error', 'Le fichier téléchargé doit être un fichier PDF.');
                         return $this->redirectToRoute('app_facture_index');
                     }
-
+    
                     try {
                         $fileName = uniqid() . '.' . $pdfFile->guessExtension();
                         $pdfFile->move(
                             $this->getParameter('pdf_directory'),
                             $fileName
                         );
-
+    
                         // Extraction du texte du PDF
                         $pdfFilePath = $this->getParameter('pdf_directory') . '/' . $fileName;
                         $extractedText .= $pdfExtractor->extractText($pdfFilePath) . PHP_EOL;
-
+    
                         // Suppression du fichier temporaire
                         unlink($pdfFilePath);
                     } catch (FileException $e) {
@@ -119,7 +141,7 @@ class FactureController extends AbstractController
                         return $this->redirectToRoute('app_facture_index');
                     }
                 }
-
+    
                 // Redirection vers traitement de toutes les factures entre les dates fournies
                 return $this->redirectToRoute('process_extracted_textall', [
                     'extractedText' => $extractedText,
@@ -136,32 +158,24 @@ class FactureController extends AbstractController
         } else {
             $factures = $factureRepository->findAll();
         }
+    
+        // Traitement des factures
+        $emailTemplateRepository = $entityManager->getRepository(EmailTemplate::class);
+        $emailTemplate = $emailTemplateRepository->findByType('PremierEnvoie');
 
+    
         return $this->render('facture/index.html.twig', [
             'factures' => $factures,
             'form' => $form->createView(),
+            'formemail' => $formemail->createView(),
             'startDate' => $startDate,
             'endDate' => $endDate,
             'facturespayee' => $factureRepository->findPayeeFactures(),
             'facturesimpayee' => $factureRepository->findNonPayeeFactures(),
+            'PremierEnvoie' => isset($emailTemplate) ? $emailTemplate : null,
         ]);
     }
 
-    // #[Route('/payee', name: 'app_facturepayee_index', methods: ['GET'])]
-    // public function indexpayee(FactureRepository $FactureRepository): Response
-    // {
-    //     return $this->render('facture/indexPayee.html.twig', [
-    //         'factures' => $FactureRepository->findPayeeFactures(),
-    //     ]);
-    // }
-
-    // #[Route('/impayee', name: 'app_factureimpayee_index', methods: ['GET'])]
-    // public function indeximpaye(FactureRepository $FactureRepository): Response
-    // {
-    //     return $this->render('facture/indeximpayee.html.twig', [
-    //         'factures' => $FactureRepository->findNonPayeeFactures(),
-    //     ]);
-    // }
 
     #[Route('/new', name: 'app_facture_new', methods: ['GET', 'POST'])]
     public function new (Request $request, FactureRepository $factureRepository, EntityManagerInterface $entityManager): Response
@@ -241,6 +255,22 @@ class FactureController extends AbstractController
             'lfacture' => $facture,
 
         ]);
+    }
+
+
+    #[Route('/get-facture-details/{id}', name: 'get_facture_details', methods: ['GET'])]
+    public function getFactureDetails(Facture $facture): JsonResponse
+    {
+        // Récupérez les détails de la facture
+        $dateFacturation = $facture->getDateFacturation()->format('F Y');
+        $clientNom = $facture->getClient()->getNom();
+
+        $response = [
+            'dateFacturation' => $dateFacturation,
+            'clientNom' => $clientNom,
+        ];
+
+        return new JsonResponse($response);
     }
 
     #[Route('/{id}', name: 'app_facture_show', methods: ['GET'])]
@@ -359,10 +389,25 @@ class FactureController extends AbstractController
 
         return new JsonResponse(['error' => 'La ligne de facture n\'a pas été trouvée'], JsonResponse::HTTP_NOT_FOUND);
     }
+    
 
     #[Route('/sendemail/{id}', name: 'send_facture_email', methods: ['GET', 'POST'])]
     public function sendemail($id, Request $request, Facture $facture, \Swift_Mailer $mailer,EntityManagerInterface $entityManager)
     {
+        $emailTemplateRepository = $entityManager->getRepository(EmailTemplate::class);
+    
+        // Obtenez l'emailTemplate en fonction de son type
+        $emailPremierEnvoie = $emailTemplateRepository->findByType('PremierEnvoie');
+        $emailAutre = $emailTemplateRepository->findByType('Autre');
+        $emailRelance = $emailTemplateRepository->findByType('Relance');
+
+        if($facture->getEtat()=='ouverte'){
+            $emailaenvoyer=$emailPremierEnvoie;
+        }else if ($facture->getEtat()=='envoyée'){
+            $emailaenvoyer=$emailRelance;
+        }else
+        $emailaenvoyer=$emailAutre;
+
 
         $options = new Options();
         $options->set('isPhpEnabled', true);
@@ -379,29 +424,14 @@ class FactureController extends AbstractController
 
         $pdfAttachment = new \Swift_Attachment($pdfContent, 'facture.pdf', 'application/pdf');
 
-        $subject = 'Facture ' . $facture->getDateFacturation()->format('F Y') . ' - ' . $facture->getClient()->getNom();
-
-        $imageUrl = 'http://localhost:8000/img/itstormsig.jpg';
-
-        $signatureImage = (new Swift_Image($imageUrl))->setFilename('signature.png');
-
-        $signatureHTML = '
-    <p>Bien Cordialement,</p>
-    <p style="margin: 0;">Farhat THABET, PhD</p>
-    <p style="margin: 0;">Président IT STORM Consulting</p>
-    <img src="' . $imageUrl . '" alt="Signature">';
-
-        $messageBody = '
-    <p>Bonjour,</p>
-    <p>Veuillez trouver ci-joint les factures liées à nos prestations, pour la période indiquée dans l\'objet de ce mail.</p>
-    <p>En attendant, nous restons à votre disposition pour tout complément d\'information.</p>
-    ' . $signatureHTML;
+        $subject = $emailaenvoyer->getSubject();
+        $body = $emailaenvoyer->getBody();
 
         $message = (new Swift_Message())
             ->setSubject($subject)
             ->setFrom('cherifmouhamed9242@yahoo.fr')
             ->setTo('cherifmouhamed123@gmail.com')
-            ->setBody($messageBody, 'text/html');
+            ->setBody($body, 'text/html');
 
         $message->attach($pdfAttachment);
 

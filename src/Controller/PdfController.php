@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\EmailTemplate;
+use App\Form\EmailTemplateType;
 use App\Form\PdfType;
 use App\Form\PdfwithdateType;
 use App\Repository\FactureRepository;
@@ -16,6 +18,42 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class PdfController extends AbstractController
 {
+
+    #[Route('/email/edit/{id}', name: 'email_template_edit')]
+    public function edit(Request $request, EmailTemplate $emailTemplate, EntityManagerInterface $entityManager): Response
+    {
+        $formemail = $this->createForm(EmailTemplateType::class, $emailTemplate);
+        $formemail->handleRequest($request);
+
+        if ($formemail->isSubmitted() && $formemail->isValid()) {
+            $entityManager->persist($emailTemplate);
+            $entityManager->flush();
+
+            // Retourne une réponse JSON pour indiquer le succès
+            return $this->json([
+                'status' => 'success',
+                'message' => 'Le template de l\'email a été mis à jour.'
+            ]);
+        }
+
+        // Retourne une réponse JSON pour indiquer une erreur de validation
+        return $this->json([
+            'status' => 'error',
+            'message' => 'Le formulaire est invalide.',
+            'errors' => $this->getFormErrors($formemail)
+        ], Response::HTTP_BAD_REQUEST);
+    }
+
+    // Fonction utilitaire pour obtenir les erreurs de formulaire
+    private function getFormErrors($form)
+    {
+        $errors = [];
+        foreach ($form->getErrors(true, true) as $error) {
+            $errors[$error->getOrigin()->getName()] = $error->getMessage();
+        }
+        return $errors;
+    }
+
 
     #[Route('/upload-pdf/{id}', name: 'upload_pdf')]
 public function uploadPdf(Request $request, PdfExtractorService $pdfExtractor, int $id): Response
@@ -209,5 +247,8 @@ public function uploadPdf(Request $request, PdfExtractorService $pdfExtractor, i
         return $this->redirectToRoute('app_facture_index');
 
     }
+
+
+   
 
 }
