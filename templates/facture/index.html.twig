@@ -231,7 +231,7 @@ Factures
                                             class="fas fa-edit"></span> Modifier</a>
                                     <div class="dropdown-divider"></div>
 
-                                    <a id="btn-envoyer-email" class="dropdown-item btn-envoyer-email"  data-toggle="modal" data-target="#emailTypeModal" data-email-id="{{ PremierEnvoie.id }}"
+                                    <a id="btn-envoyer-email" class="dropdown-item btn-envoyer-email"  data-toggle="modal" data-target="#emailTypeModal" 
                                         data-facture-id="{{ facture.id }}">
                                         <span class="fas fa-paper-plane"></span> Envoyer
                                     </a>
@@ -252,7 +252,7 @@ Factures
                                             class="fas fa-check"></i> Vérifier paiement</a>
 
                                     <div class="dropdown-divider"></div>
-                                     <a id="btn-envoyer-email" class="dropdown-item btn-envoyer-email"  data-toggle="modal" data-target="#emailTypeModal" data-email-id="{{ PremierEnvoie.id }}"
+                                     <a id="btn-envoyer-email" class="dropdown-item btn-envoyer-email"  data-toggle="modal" data-target="#emailTypeModal" 
                                         data-facture-id="{{ facture.id }}">
                                         <span class="fas fa-paper-plane"></span> Renvoyer
                                     </a>
@@ -415,13 +415,14 @@ Factures
         </div>
         <!-- //tab-con -->
     </div>
-    <!-- Vue modale pour modifier l'email -->
 
     <!-- Vue modale pour modifier l'email -->
     <div class="modal fade" id="emailTypeModal" tabindex="-1" aria-labelledby="emailTypeModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
+                <input type="hidden" id="facture_id_input" name="facture_id">
+
                     <h5 class="modal-title" id="emailTypeModalLabel">E-mail</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
@@ -429,7 +430,7 @@ Factures
                 </div>
                  {{ form_start(formemail) }}
                 <div class="modal-body">
-                   
+
                     <div class="form-group">
                         {{ form_label(formemail.subject) }}
                         {{ form_widget(formemail.subject, {'attr': {'class': 'form-control col-md-12', 'id': 'subject'}}) }}
@@ -438,22 +439,22 @@ Factures
 
                     <div class="form-group">
                         {{ form_label(formemail.body) }}
-                        {{ form_widget(formemail.body, {'attr': {'class': 'form-control col-md-12'}, 'value': PremierEnvoie.body}) }}
+                        {{ form_widget(formemail.body, {'attr': {'class': 'form-control col-md-12'}, 'id': 'body'}) }}
                         {{ form_errors(formemail.body) }}
                     </div>
 
                      <div class="form-group" style="display:none">
                         {{ form_label(formemail.type) }}
-                        {{ form_widget(formemail.type, {'attr': {'class': 'form-control col-md-12'}}) }}
+                        {{ form_widget(formemail.type, {'attr': {'class': 'form-control col-md-12'}, 'id': 'type'}) }}
                         {{ form_errors(formemail.type) }}
                     </div>
 
                     <div class="form-group" >
-                        <img src="{{ asset('img/piecejointe.png') }}" alt="PJ" class="brand-image" id="pjclick" style="width: 150px; height: 150px;animation: blink 3s infinite;">
+                        <img src="{{ asset('img/piecejointe.png') }}" alt="PJ"  onclick="showfacture()"  class="brand-image" id="pjclick" style="width: 150px; height: 150px;animation: blink 3s infinite;cursor: pointer;">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="sendEmailButton" data-email-id="{{ PremierEnvoie.id }}" class="btn btn-success">{{ button_label|default('Envoyer') }}</button>
+                    <button id="sendEmailButton" class="btn btn-success">{{ button_label|default('Envoyer') }}</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
                 </div>
                  {{ form_end(formemail) }}
@@ -488,32 +489,104 @@ $(document).ready(function() {
             "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
         }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
     });
+
+     $(".tabmenu-wrap .tab-nav")
+    .find("a")
+    .on("click", function(e) {
+        var $this = $(this);
+        var $all_tab_nav = $this.parents(".tab-nav").find(".nav");
+        var $tab_contents = $this.parents(".tabmenu-wrap").find(".con-box");
+        var id = $this.attr("href");
+        e.preventDefault();
+        $all_tab_nav.removeClass("on");
+        $this.parent().addClass("on");
+        $tab_contents.hide();
+        $(id).show();
+        // Ajouter un arrière-plan coloré à l'onglet actif
+        $all_tab_nav.css("background-color", ""); // Réinitialiser la couleur de fond
+        $this.parent().css("background-color", "rgb(239, 239, 239)");
+    });
      
-$('.btn-envoyer-email').on('click', function() {
+    $('.btn-envoyer-email').on('click', function() {
+    var facturId = event.currentTarget.getAttribute('data-facture-id');
+    document.getElementById('facture_id_input').value = facturId;
     var factureId = $(this).data('facture-id');
     $.ajax({
         url: '/facture/get-facture-details/' + factureId,
         type: 'GET',
-        success: function(response) {
-            var dateFacturation = response.dateFacturation;
-            var clientNom = response.clientNom;
-            var subject = 'Facture ' + dateFacturation + ' - ' + clientNom;
+    success: function(response) {
+        var dateFacturation = response.dateFacturation;
+        var emailId = response.emailid;    
+        // var body = response.emailbody;
+        // var type = response.emailtype;
+        var body ='';
+        var type = '';
+        var subject = '';
+        var clientNom = response.clientNom;
+
+        if(response.etatfacture == 'envoyée'){
+             type = "Relance";
+             subject = '[IT Storm Consulting] Retard de paiement facture - ' + response.numfacture + ' - ' + clientNom;
+             body = '<p>Bonjour,</p>' +
+                    '<br>' +
+                    '<p>Sauf erreur ou omission de notre part, nous constatons que votre compte client présente à ce jour un solde débiteur de : ' + response.montant + ' £ .</p>' +
+                    '<p>Ce montant correspond à notre facture en pièce jointe restée impayée.</p>' +
+                    '<p>L\'échéance étant dépassée, nous vous demandons de bien vouloir régulariser cette situation. Dans le cas où votre règlement aurait été adressé entre temps, nous vous prions de ne pas tenir compte de la présente.</p>' +
+                    '<p>Bien Cordialement,</p>'+
+                    '<p style="margin: 0;">Farhat THABET, PhD</p>'+
+                    '<p style="margin: 0;">Président IT STORM Consulting</p>'+
+                    '<br>';
+            }
+     
+        else if (response.etatfacture == 'ouverte')
+        {
+            type = "PremierEnvoie";
+            subject = 'Facture ' + dateFacturation + ' - ' + clientNom;
+            body = '<p>Bonjour,</p>' +
+                           '<br>' +
+                           '<p>Veuillez trouver ci-joint les factures liées à nos prestations, pour la période indiquée dans l\'objet de ce mail.</p>' +
+                           '<p>En attendant, nous restons à votre disposition pour tout complément d\'information.</p>' +
+                           '<p>Bien Cordialement,</p>' +
+                           '<p style="margin: 0;">Farhat THABET, PhD</p>' +
+                           '<p style="margin: 0;">Président IT STORM Consulting</p>' +
+                           '<br>';  
+        }else{
+            type = "Autre";
+            subject = 'Facture ' + dateFacturation + ' - ' + clientNom;
+            body='<p>Bonjour,</p>' +
+                           '<br>' +
+                           '<p>Veuillez trouver ci-joint les factures liées à nos prestations, pour la période indiquée dans l\'objet de ce mail.</p>' +
+                           '<p>En attendant, nous restons à votre disposition pour tout complément d\'information.</p>' +
+                           '<p>Bien Cordialement,</p>' +
+                           '<p style="margin: 0;">Farhat THABET, PhD</p>' +
+                           '<p style="margin: 0;">Président IT STORM Consulting</p>' +
+                           '<br>';    
+        }
+     
+        
+           
+
+
 
             setTimeout(function() {
                 // Recherchez le champ #subject dans le modal
                 var $subjectField = $('#emailTypeModal').find('.modal-body #email_template_subject');
+
+                var $bodyField = $('#emailTypeModal').find('.modal-body #body');
+
+                var $typeField = $('#emailTypeModal').find('.modal-body #type');
                 // Vérifiez s'il a été trouvé
                 if ($subjectField.length > 0) {
                     // Définissez la valeur du champ
                     $subjectField.val(subject);
-                    console.log("Sujet après avoir défini la valeur : " + $subjectField.val());
 
-                    // Une fois que le sujet est défini, attachez un gestionnaire d'événements à
-                    //  le bouton d'envoi pour soumettre le formulaire lorsque l'utilisateur clique dessus
+                    $bodyField.val(body);
+                    $typeField.val(type);
+
                    $('#sendEmailButton').on('click', function(event) {
-                            event.preventDefault(); // Empêche le formulaire de se soumettre de manière traditionnelle
-                             var emailId = $(this).data('email-id');
-
+                            event.preventDefault();
+                            //  var emailId = $(this).data('email-id');
+                           
                             $.ajax({
                                 url: '/email/edit/' + emailId,
                                 type: 'POST',
@@ -546,13 +619,17 @@ $('.btn-envoyer-email').on('click', function() {
             }, 100);
         },
         error: function(xhr, status, error) {
-            // Gérez les erreurs
             console.error(error);
         }
     });
 });
 
 });
+    function showfacture() {
+        var factureId = $('#facture_id_input').val();
+        //  nouvelle fenêtre
+        window.open('/facture/' + factureId, '_blank');
+    }
 
 </script>
 

@@ -160,8 +160,8 @@ class FactureController extends AbstractController
         }
     
         // Traitement des factures
-        $emailTemplateRepository = $entityManager->getRepository(EmailTemplate::class);
-        $emailTemplate = $emailTemplateRepository->findByType('PremierEnvoie');
+        // $emailTemplateRepository = $entityManager->getRepository(EmailTemplate::class);
+        // $emailTemplate = $emailTemplateRepository->findByType('PremierEnvoie');
 
     
         return $this->render('facture/index.html.twig', [
@@ -172,7 +172,7 @@ class FactureController extends AbstractController
             'endDate' => $endDate,
             'facturespayee' => $factureRepository->findPayeeFactures(),
             'facturesimpayee' => $factureRepository->findNonPayeeFactures(),
-            'PremierEnvoie' => isset($emailTemplate) ? $emailTemplate : null,
+            // 'PremierEnvoie' => isset($emailTemplate) ? $emailTemplate : null,
         ]);
     }
 
@@ -259,15 +259,45 @@ class FactureController extends AbstractController
 
 
     #[Route('/get-facture-details/{id}', name: 'get_facture_details', methods: ['GET'])]
-    public function getFactureDetails(Facture $facture): JsonResponse
+    public function getFactureDetails(Facture $facture,EntityManagerInterface $entityManager): JsonResponse
     {
         // Récupérez les détails de la facture
         $dateFacturation = $facture->getDateFacturation()->format('F Y');
         $clientNom = $facture->getClient()->getNom();
+        $etatfacture=$facture->getEtat();
+        $numfacture=$facture->getNumfacture();
+
+        $totalTTC = $facture->getTotalTTC(); // Extract integer value from Facture object
+        $formattedTotalTTC = number_format($totalTTC, 2, ',', ' ');
+       
+
+        $emailTemplateRepository = $entityManager->getRepository(EmailTemplate::class);
+
+        $emailPremierEnvoie = $emailTemplateRepository->findById(1);
+        $emailRelance = $emailTemplateRepository->findById(2);
+        $emailAutre = $emailTemplateRepository->findById(3);
+
+
+        if($etatfacture=='ouverte'){
+            $emailaenvoyer=$emailPremierEnvoie;
+
+        }else if ($etatfacture=='envoyée'){
+            $emailaenvoyer=$emailRelance;
+        }else
+        $emailaenvoyer=$emailAutre;
 
         $response = [
             'dateFacturation' => $dateFacturation,
             'clientNom' => $clientNom,
+            'montant'=>$formattedTotalTTC,
+            'etatfacture'=>$etatfacture,
+            'numfacture'=> $numfacture,
+            'emailid'=>$emailaenvoyer->getId(),
+            'emailsubject'=>$emailaenvoyer->getSubject(),
+            'emailbody'=>$emailaenvoyer->getBody(),
+            'emailtype'=>$emailaenvoyer->getType(),
+
+            
         ];
 
         return new JsonResponse($response);

@@ -26,7 +26,7 @@ class PdfController extends AbstractController
         $formemail->handleRequest($request);
 
         if ($formemail->isSubmitted() && $formemail->isValid()) {
-            $entityManager->persist($emailTemplate);
+            // Pas besoin de persister l'entité, car elle est déjà persistante
             $entityManager->flush();
 
             // Retourne une réponse JSON pour indiquer le succès
@@ -43,6 +43,7 @@ class PdfController extends AbstractController
             'errors' => $this->getFormErrors($formemail)
         ], Response::HTTP_BAD_REQUEST);
     }
+
 
     // Fonction utilitaire pour obtenir les erreurs de formulaire
     private function getFormErrors($form)

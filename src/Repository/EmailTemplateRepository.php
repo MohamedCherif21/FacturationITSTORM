@@ -50,4 +50,15 @@ class EmailTemplateRepository extends ServiceEntityRepository
 //            ->getOneOrNullResult()
 //        ;
 //    }
+
+ /**
+     * Finds an EmailTemplate by its id.
+     *
+     * @param int $id
+     * @return EmailTemplate|null
+     */
+    public function findById(int $id): ?EmailTemplate
+    {
+        return $this->find($id);
+    }
 }
