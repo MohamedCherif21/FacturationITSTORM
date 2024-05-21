@@ -42,6 +42,9 @@ class Facture
         private string $etat = 'ouverte'; 
 
 
+    private ?int $customDelaiPaiement = null;
+
+
     #[ORM\Column(type: "float", nullable: true)]
     private ?float $totalTTC = null;
 
@@ -105,6 +108,18 @@ class Facture
         return $this;
     }
 
+    public function getCustomDelaiPaiement(): ?int
+    {
+        return $this->customDelaiPaiement;
+    }
+
+    public function setCustomDelaiPaiement(?int $customDelaiPaiement): self
+    {
+        $this->customDelaiPaiement = $customDelaiPaiement;
+
+        return $this;
+    }
+    
     public function getTotalTaxe(): ?float
     {
         return $this->totaltaxe;

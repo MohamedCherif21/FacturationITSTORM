@@ -39,14 +39,14 @@ class FactureController extends AbstractController
         foreach ($factures as $facture) {
             if ($facture->getDateEcheance() < $dateNow && $facture->getEtat() === 'envoyée') {
                 $facture->setEtat('non-payée');
-                $facturesNonPayees[] = $facture; // Ajouter à la liste des factures non payées
+                $facturesNonPayees[] = $facture; // Ajout à la liste des factures non payées
             }
         }
         $entityManager->persist($facture);
         $entityManager->flush();
 
         if (!empty($facturesNonPayees)) {
-            //contenu de l'email
+            
             $messageBody = '<p>Les factures suivantes ne sont pas encore payées :</p><ul>';
 
             foreach ($facturesNonPayees as $facture) {
@@ -78,8 +78,7 @@ class FactureController extends AbstractController
     #[Route('/', name: 'app_facture_index', methods: ['GET', 'POST'])]
     public function index(Request $request, FactureRepository $factureRepository, PdfExtractorService $pdfExtractor, EntityManagerInterface $entityManager): Response
     {
-        // Création du formulaire d'édition d'email
-        $emailTemplate = new EmailTemplate(); // Créez une nouvelle instance de EmailTemplate
+        $emailTemplate = new EmailTemplate(); 
         $formemail = $this->createForm(EmailTemplateType::class, $emailTemplate);
         $formemail->handleRequest($request);
     
@@ -87,22 +86,11 @@ class FactureController extends AbstractController
             $entityManager->persist($emailTemplate);
             $entityManager->flush();
         }
-    
-        $selectedFactureId = $request->get('facture_id');
-        if ($selectedFactureId) {
-            // Récupérer la facture sélectionnée depuis la base de données
-            $selectedFacture = $factureRepository->find($selectedFactureId);
-    
-            if ($selectedFacture) {
-                // Pré-remplir l'objet de l'e-mail avec les informations de la facture sélectionnée
-                $emailTemplate->setSubject("facture : " . $selectedFacture->getNumFacture() . " - " . $selectedFacture->getClient()->getNom() . " - " . $selectedFacture->getDateFacturation()->format('Y-m-d'));
-            }
-        }
-    
+   
         $form = $this->createForm(PdfwithdateType::class);
         $form->handleRequest($request);
     
-        // Initialisation des variables
+        // Initialisation 
         $startDate = new \DateTime(date('Y-01-01')); // Début de l'année en cours
         $endDate = new \DateTime(date('Y-m-t')); // Fin du mois en cours
         $factures = [];
@@ -134,7 +122,7 @@ class FactureController extends AbstractController
                         $pdfFilePath = $this->getParameter('pdf_directory') . '/' . $fileName;
                         $extractedText .= $pdfExtractor->extractText($pdfFilePath) . PHP_EOL;
     
-                        // Suppression du fichier temporaire
+                        // Suppr du fichier temporaire
                         unlink($pdfFilePath);
                     } catch (FileException $e) {
                         $this->addFlash('error', 'Une erreur s\'est produite lors du téléchargement du fichier.');
@@ -158,11 +146,6 @@ class FactureController extends AbstractController
         } else {
             $factures = $factureRepository->findAll();
         }
-    
-        // Traitement des factures
-        // $emailTemplateRepository = $entityManager->getRepository(EmailTemplate::class);
-        // $emailTemplate = $emailTemplateRepository->findByType('PremierEnvoie');
-
     
         return $this->render('facture/index.html.twig', [
             'factures' => $factures,
@@ -192,6 +175,10 @@ class FactureController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            
+            if ($facture->getDelaiPaiement() === 'other') {
+                $facture->setDelaiPaiement($form->get('customDelaiPaiement')->getData());
+            }
 
             $entityManager->persist($facture);
             $entityManager->flush();
@@ -231,7 +218,6 @@ class FactureController extends AbstractController
             $entityManager->persist($facture);
             $entityManager->flush();
 
-            // AJAX et format JSON
             if ($request->isXmlHttpRequest()) {
                 $ligneFactureId = $ligneFacture->getId();
                 $response = [
@@ -261,13 +247,13 @@ class FactureController extends AbstractController
     #[Route('/get-facture-details/{id}', name: 'get_facture_details', methods: ['GET'])]
     public function getFactureDetails(Facture $facture,EntityManagerInterface $entityManager): JsonResponse
     {
-        // Récupérez les détails de la facture
+        //détails de la facture
         $dateFacturation = $facture->getDateFacturation()->format('F Y');
         $clientNom = $facture->getClient()->getNom();
         $etatfacture=$facture->getEtat();
         $numfacture=$facture->getNumfacture();
 
-        $totalTTC = $facture->getTotalTTC(); // Extract integer value from Facture object
+        $totalTTC = $facture->getTotalTTC(); 
         $formattedTotalTTC = number_format($totalTTC, 2, ',', ' ');
        
 
@@ -340,7 +326,6 @@ class FactureController extends AbstractController
     #[Route('/x/{id}', name: 'app_efacturx_show', methods: ['GET'])]
     public function showfacturx(Facture $facture): Response
     {
-        // Générer le contenu XML et SVG
         $xmlContent = $this->generateXmlContent($facture);
         $svgContent = $this->generateSvgContent($xmlContent);
 

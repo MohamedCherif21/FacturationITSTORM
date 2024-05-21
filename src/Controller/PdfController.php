@@ -26,17 +26,13 @@ class PdfController extends AbstractController
         $formemail->handleRequest($request);
 
         if ($formemail->isSubmitted() && $formemail->isValid()) {
-            // Pas besoin de persister l'entité, car elle est déjà persistante
             $entityManager->flush();
 
-            // Retourne une réponse JSON pour indiquer le succès
             return $this->json([
                 'status' => 'success',
                 'message' => 'Le template de l\'email a été mis à jour.'
             ]);
         }
-
-        // Retourne une réponse JSON pour indiquer une erreur de validation
         return $this->json([
             'status' => 'error',
             'message' => 'Le formulaire est invalide.',
@@ -81,11 +77,11 @@ public function uploadPdf(Request $request, PdfExtractorService $pdfExtractor, i
                         $fileName
                     );
 
-                    // Extraction du texte du PDF
+                    // Extract du texte du PDF
                     $pdfFilePath = $this->getParameter('pdf_directory') . '/' . $fileName;
                     $extractedText = $pdfExtractor->extractText($pdfFilePath);
 
-                    // Suppression du fichier temporaire
+                    // Suppr du fichier temporaire
                     unlink($pdfFilePath);
 
                     return $this->redirectToRoute('process_extracted_text', ['extractedText' => $extractedText, 'id' => $id]);
@@ -104,30 +100,98 @@ public function uploadPdf(Request $request, PdfExtractorService $pdfExtractor, i
 }
 
 
-    #[Route('/process-extracted-text/{id}', name: 'process_extracted_text')]
-    public function processExtractedText(Request $request, FactureRepository $factureRepository, int $id,EntityManagerInterface $entityManager): Response
-    {
-        $extractedText = $request->query->get('extractedText');
-        $facture = $factureRepository->find($id);
+#[Route('/process-extracted-text/{id}', name: 'process_extracted_text')]
+public function processExtractedText(Request $request, FactureRepository $factureRepository, int $id, EntityManagerInterface $entityManager): Response
+{
+    $extractedText = $request->query->get('extractedText');
+    $facture = $factureRepository->find($id);
 
-        $clientName = $facture->getClient()->getNom();
-        $totalPaid = $facture->getTotalTTC();
+    $clientName = $facture->getClient()->getNom();
+    $totalPaid = $facture->getTotalTTC();
 
-        // Vérifiez si le texte extrait est fourni
-        if ($extractedText !== null) {
-            // Vérifiez si le nom du client existe dans le texte extrait
+    // Vérifiez si le texte extrait est fourni
+    if ($extractedText !== null) {
+        // Vérifiez si le nom du client est présent dans le texte extrait
+        $clientPosition = strpos($extractedText, $clientName);
+        if ($clientPosition !== false) {
+            // Définissez l'index de départ pour rechercher le montant
+            $startIndex = $clientPosition + strlen($clientName);
+
+            // Trouvez le premier "+" après le nom du client et extrayez le montant suivant
+            $pattern = '/\+\s*(\d+(?:[,.]\d+)?)\s*EUR/';
+            if (preg_match($pattern, substr($extractedText, $startIndex), $matches)) {
+                // Convertissez le montant extrait en float
+                $extractedAmount = (float) str_replace([','], ['.'], $matches[1]);
+
+                $tolerance = $totalPaid * 0.3;
+
+                if (abs($extractedAmount - $totalPaid) <= $tolerance) {
+                    if ($extractedAmount === $totalPaid) {
+                        $facture->setEtat('payée');
+                    } else {
+                        $facture->setEtat('à_vérifier');
+                    }
+                } else {
+                    $facture->setEtat('non-payée');
+                }
+            } else {
+                $facture->setEtat('non-payée');
+            }
+        } else {
+            $facture->setEtat('non-payée');
+        }
+    } else {
+        // Aucun texte extrait fourni, donc la facture est considérée comme non payée
+        $this->addFlash('success', 'Les états des factures ont été mis à jour avec succès.');
+        return $this->redirectToRoute('app_facture_index');
+    }
+    $entityManager->persist($facture);
+    $entityManager->flush();
+
+    if ($facture->getEtat() === 'payée') {
+        $this->addFlash('success', 'La facture ' . $facture->getNumfacture() . ' du client ' . $facture->getClient()->getNom() . ' est payée.');
+        return $this->redirectToRoute('app_facture_index');
+    } elseif ($facture->getEtat() === 'à_vérifier') {
+        $this->addFlash('warning', 'La facture ' . $facture->getNumfacture() . ' du client ' . $facture->getClient()->getNom() . ' nécessite une vérification.');
+        return $this->redirectToRoute('app_facture_index');
+    } elseif ($facture->getEtat() === 'non-payée') {
+        $this->addFlash('error', 'La facture ' . $facture->getNumfacture() . ' du client ' . $facture->getClient()->getNom() . ' n\'est pas encore payée.');
+        return $this->redirectToRoute('app_facture_index');
+    } else {
+        $this->addFlash('error', 'Erreur veuillez réessayer.');
+        return $this->redirectToRoute('app_facture_index');
+    }
+}
+
+
+#[Route('/process-extracted-text-all', name: 'process_extracted_textall')]
+public function processExtractedTextAllFacture(Request $request, FactureRepository $factureRepository, EntityManagerInterface $entityManager): Response
+{
+    $startDate = new DateTime($request->query->get('start_date'));
+    $endDate = new DateTime($request->query->get('end_date'));
+
+    $extractedText = $request->query->get('extractedText');
+
+    // Vérifiez si le texte extrait est fourni
+    if ($extractedText !== null) {
+        // Récupérez toutes les factures entre les dates données
+        $factures = $factureRepository->findByDateRange($startDate, $endDate);
+
+        // Parcourez toutes les factures
+        foreach ($factures as $facture) {
+            // Vérifiez si la facture est non payée
+            $clientName = $facture->getClient()->getNom();
+            $totalPaid = $facture->getTotalTTC();
             $clientPosition = strpos($extractedText, $clientName);
             if ($clientPosition !== false) {
                 // Définissez l'index de départ pour rechercher le montant
                 $startIndex = $clientPosition + strlen($clientName);
 
-                // Recherchez tous les montants dans le texte extrait à partir de l'index du nom du client
-                preg_match_all('/\+\s*\d+(?:[,.]\d+)?\s*EUR/', $extractedText, $matches, 0, $startIndex);
-
-                // Parcourez tous les montants trouvés
-                foreach ($matches[0] as $match) {
-                    // Retirez le "+" et "EUR" et les espaces, puis convertissez en float
-                    $extractedAmount = (float) str_replace(['+', 'EUR', ',', ' '], ['', '', '', ''], $match);
+                // Trouvez le premier "+" après le nom du client et extrayez le montant suivant
+                $pattern = '/\+\s*(\d+(?:[,.]\d+)?)\s*EUR/';
+                if (preg_match($pattern, substr($extractedText, $startIndex), $matches)) {
+                    // Convertissez le montant extrait en float
+                    $extractedAmount = (float) str_replace([','], ['.'], $matches[1]);
 
                     // Définissez une marge de tolérance de 30% pour la comparaison des montants
                     $tolerance = $totalPaid * 0.3;
@@ -140,114 +204,26 @@ public function uploadPdf(Request $request, PdfExtractorService $pdfExtractor, i
                         } else {
                             $facture->setEtat('à_vérifier');
                         }
-                        // Sortez de la boucle dès qu'un montant est trouvé
-                        break;
-                    }
-                }
-
-                if ($facture->getEtat() === ('envoyée')) {
-                    $facture->setEtat('non-payée');
-
-                }
-            } else {
-                $facture->setEtat('non-payée');
-            }
-        } else {
-            // Aucun texte extrait fourni, donc la facture est considérée comme non payée
-            $this->addFlash('success', 'Les états des factures ont été mis à jour avec succès.');
-            return $this->redirectToRoute('app_facture_index');
-        }
-
-        // Enregistrez les modifications dans la base de données
-        $entityManager->persist($facture);
-        $entityManager->flush();
-
-        // Redirigez l'utilisateur en fonction de l'état de la facture après la mise à jour
-        if ($facture->getEtat() === 'payée') {
-            $this->addFlash('success', 'La facture ' . $facture->getNumfacture() . ' du client ' . $facture->getClient()->getNom() . ' est payée.');
-            return $this->redirectToRoute('app_facturepayee_index');
-        } elseif ($facture->getEtat() === 'à_vérifier') {
-            $this->addFlash('warning', 'La facture ' . $facture->getNumfacture() . ' du client ' . $facture->getClient()->getNom() . ' nécessite une vérification.');
-            return $this->redirectToRoute('app_facture_index');
-        } elseif ($facture->getEtat() === 'non-payée') {
-            $this->addFlash('error', 'La facture ' . $facture->getNumfacture() . ' du client ' . $facture->getClient()->getNom() . ' n\'est pas encore payée.');
-            return $this->redirectToRoute('app_factureimpayee_index');
-        } else {
-            $this->addFlash('error', 'Erreur veuillez réessayer.');
-            return $this->redirectToRoute('app_facture_index');
-        }
-    }
-
-    #[Route('/process-extracted-text-all', name: 'process_extracted_textall')]
-    public function processExtractedTextAllFacture(Request $request, FactureRepository $factureRepository, EntityManagerInterface $entityManager): Response
-    {
-        // Obtenez les dates de début et de fin à partir de la requête
-        $startDate = new DateTime($request->query->get('start_date'));
-        $endDate = new DateTime($request->query->get('end_date'));
-
-        // Obtenez le texte extrait du formulaire
-        $extractedText = $request->query->get('extractedText');
-
-        // Vérifiez si le texte extrait est fourni
-        if ($extractedText !== null) {
-            // Récupérez toutes les factures entre les dates données
-            $factures = $factureRepository->findByDateRange($startDate, $endDate);
-
-            // Parcourez toutes les factures
-            foreach ($factures as $facture) {
-                // Vérifiez si la facture est non payée
-                $clientName = $facture->getClient()->getNom();
-                $totalPaid = $facture->getTotalTTC();
-                $clientPosition = strpos($extractedText, $clientName);
-                if ($clientPosition !== false) {
-                    // Définissez l'index de départ pour rechercher le montant
-                    $startIndex = $clientPosition + strlen($clientName);
-
-                    // Recherchez tous les montants dans le texte extrait à partir de l'index du nom du client
-                    preg_match_all('/\+\s*\d+(?:[,.]\d+)?\s*EUR/', $extractedText, $matches, 0, $startIndex);
-
-                    // Parcourez tous les montants trouvés
-                    foreach ($matches[0] as $match) {
-                        // Retirez le "+" et "EUR" et les espaces, puis convertissez en float
-                        $extractedAmount = (float) str_replace(['+', 'EUR', ',', ' '], ['', '', '', ''], $match);
-
-                        // Définissez une marge de tolérance de 30% pour la comparaison des montants
-                        $tolerance = $totalPaid * 0.3;
-
-                        // Vérifiez si le montant extrait est à l'intérieur de la plage de tolérance
-                        if (abs($extractedAmount - $totalPaid) <= $tolerance) {
-                            // Le montant extrait est dans la plage de tolérance, donc la facture est considérée comme payée ou à vérifier
-                            if ($extractedAmount === $totalPaid) {
-                                $facture->setEtat('payée');
-                            } else {
-                                $facture->setEtat('à_vérifier');
-                            }
-                            // Sortez de la boucle dès qu'un montant est trouvé
-                            break;
-                        }
-                    }
-
-                    if ($facture->getEtat() === ('envoyée')) {
+                    } else {
                         $facture->setEtat('non-payée');
-
                     }
                 } else {
                     $facture->setEtat('non-payée');
                 }
+            } else {
+                $facture->setEtat('non-payée');
             }
-        } else {
-            // Aucun texte extrait fourni, donc la facture est considérée comme non payée
-            $this->addFlash('error', 'Problème avec le document fourni !');
-            return $this->redirectToRoute('app_facture_index');
         }
-        // Enregistrez les modifications dans la base de données
-        $entityManager->flush();
-
-        // Redirigez l'utilisateur après avoir mis à jour toutes les factures
-        $this->addFlash('success', 'Les états des factures ont été mis à jour avec succès.');
+    } else {
+        $this->addFlash('error', 'Problème avec le document fourni !');
         return $this->redirectToRoute('app_facture_index');
-
     }
+    
+    $entityManager->flush();
+
+    $this->addFlash('success', 'Les états des factures ont été mis à jour avec succès.');
+    return $this->redirectToRoute('app_facture_index');
+}
 
 
    

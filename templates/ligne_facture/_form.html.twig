@@ -1,9 +1,9 @@
-{{ form_start(form, {'attr': {'id': 'formadd', 'novalidate': 'novalidate'}}) }}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <hr/>
 <h2>Facture</h2>
 
 <hr/>
+{{ form_start(form, {'attr': {'id': 'formadd', 'novalidate': 'novalidate'}}) }}
 
 <div class="row">
     <div class="col-md-6">
@@ -36,12 +36,12 @@
     </div>
 
 
-<div class="col-md-6">
+    {# <div class="col-md-6">
         <div class="form-group" style="display:none;">
             {{ form_label(facture.delaiPaiement) }}
             {{ form_widget(facture.delaiPaiement, {'attr': {'class': 'form-control', 'id': 'dateEcheance'}}) }}
         </div>
-    </div>
+    </div> #}
     
 </div>
 <hr/>
@@ -193,7 +193,7 @@
     }
 
     // Détecter le changement de la date d'échéance et soumettre automatiquement le formulaire
-    $('#dateEcheance').change(function() {
+    $('#facture_dateEcheance').change(function() {
         $('#formadd').submit();
     });
 $(document).ready(function() {
