@@ -19,6 +19,7 @@ class ClientType extends AbstractType
             ->add('numtel')
             ->add('siret')
             ->add('adresse')
+            ->add('referencebancaire')
             // ->add('contrat')
         ;
     }

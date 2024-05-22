@@ -14,9 +14,18 @@ class PdfType extends AbstractType
     {
         $builder
         ->add('pdfFiles', FileType::class, [
-            'label' => 'Relevés bancaires',
+            'label' => 'Relevés bancaires Quonto',
             'multiple' => true,
-            'required' => true,
+            'required' => false,
+            'attr' => [
+                'accept' => '.pdf', 
+            ],
+        ])
+
+        ->add('pdfFilesCom', FileType::class, [
+            'label' => 'Relevés bancaires LCL',
+            'multiple' => true,
+            'required' => false,
             'attr' => [
                 'accept' => '.pdf', 
             ],

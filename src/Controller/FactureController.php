@@ -22,6 +22,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -407,63 +408,90 @@ class FactureController extends AbstractController
     
 
     #[Route('/sendemail/{id}', name: 'send_facture_email', methods: ['GET', 'POST'])]
-    public function sendemail($id, Request $request, Facture $facture, \Swift_Mailer $mailer,EntityManagerInterface $entityManager)
+    public function sendemail($id, Request $request, Facture $facture, \Swift_Mailer $mailer, EntityManagerInterface $entityManager)
     {
-        $emailTemplateRepository = $entityManager->getRepository(EmailTemplate::class);
-    
+         $emailTemplateRepository = $entityManager->getRepository(EmailTemplate::class);
+        
         // Obtenez l'emailTemplate en fonction de son type
-        $emailPremierEnvoie = $emailTemplateRepository->findByType('PremierEnvoie');
-        $emailAutre = $emailTemplateRepository->findByType('Autre');
-        $emailRelance = $emailTemplateRepository->findByType('Relance');
-
+        $emailPremierEnvoie = $emailTemplateRepository->findById(1);
+        $emailAutre = $emailTemplateRepository->findById(3);
+        $emailRelance = $emailTemplateRepository->findById(2);
+    
         if($facture->getEtat()=='ouverte'){
             $emailaenvoyer=$emailPremierEnvoie;
         }else if ($facture->getEtat()=='envoyée'){
-            $emailaenvoyer=$emailRelance;
+        $emailaenvoyer=$emailRelance;
         }else
-        $emailaenvoyer=$emailAutre;
-
-
+        $emailaenvoyer=$emailAutre;    
+    
+    
+        // Configuration de Dompdf
         $options = new Options();
         $options->set('isPhpEnabled', true);
         $options->set('isHtml5ParserEnabled', true);
         $options->set('isRemoteEnabled', true);
-
+    
         $dompdf = new Dompdf($options);
-
+    
+        // Génération du PDF
         $html = $this->renderView('facture/efacture.html.twig', ['facture' => $facture]);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
         $pdfContent = $dompdf->output();
-
+    
         $pdfAttachment = new \Swift_Attachment($pdfContent, 'facture.pdf', 'application/pdf');
-
-        $subject = $emailaenvoyer->getSubject();
-        $body = $emailaenvoyer->getBody();
-
-        $message = (new Swift_Message())
-            ->setSubject($subject)
+    
+        // Préparation du message
+        $message = (new \Swift_Message())
+            ->setSubject($emailaenvoyer->getSubject())
             ->setFrom('cherifmouhamed9242@yahoo.fr')
             ->setTo('cherifmouhamed123@gmail.com')
-            ->setBody($body, 'text/html');
-
-        $message->attach($pdfAttachment);
-
+            ->setBody($emailaenvoyer->getBody(), 'text/html')
+            ->attach($pdfAttachment);
+    
+        // Envoi de l'email
         try {
             $mailer->send($message);
             $this->addFlash('success', 'La facture a été envoyée par e-mail avec succès.');
             $facture->setEtat("envoyée");
-            $entityManager->persist($facture);
-            $entityManager->flush();
         } catch (TransportExceptionInterface $e) {
             $this->addFlash('error', 'Une erreur s\'est produite lors de l\'envoi de la facture par e-mail.');
         }
-        $this->addFlash('success', 'La facture ' . $facture->getNumfacture() . ' est envoyée avec succés à ' . $facture->getClient()->getNom());
-
+    
+        // Mise à jour de la facture et affichage du message de succès
+        $entityManager->persist($facture);
+        $entityManager->flush();
+    
+        $this->addFlash('success', 'La facture ' . $facture->getNumfacture() . ' est envoyée avec succès à ' . $facture->getClient()->getNom());
+    
         return $this->redirectToRoute('app_facture_index');
     }
+    
 
+    // #[Route('/email_template', name: 'get_email_template' , methods: ['POST'])]
+    // public function getEmailTemplate(Request $request)
+    // {
+
+    //     $templateName = $request->request->get('templateName');
+    //     $montant = $request->request->get('montant');
+
+    //     $templateMap = [
+    //         'relaunch' => 'emailtemplate/email_relance.html.twig',
+    //         'first_send' => 'emailtemplate/email_premierenvoie.html.twig',
+        
+    //     ];
+
+    //     if (!array_key_exists($templateName, $templateMap)) {
+    //         throw new NotFoundHttpException("Template not found");
+    //     }
+
+    //     $html = $this->renderView($templateMap[$templateName], ['montant' => $montant]);
+
+    //     return new JsonResponse(['html' => $html]);
+    // }
+
+//facture-X
     #[Route('/sendfacturx/{id}', name: 'send_facturx_email', methods: ['GET', 'POST'])]
     public function sendemailxfactur($id, Request $request, Facture $facture, \Swift_Mailer $mailer,EntityManagerInterface $entityManager): Response
     {
@@ -526,68 +554,5 @@ class FactureController extends AbstractController
         return $this->redirectToRoute('app_facture_show', ['id' => $facture->getId()]);
     }
 
-    #[Route('/sendrappel/{id}', name: 'send_rappel_email', methods: ['GET', 'POST'])]
-    public function sendrappel($id, Request $request, Facture $facture, \Swift_Mailer $mailer,EntityManagerInterface $entityManager)
-    {
-
-        $options = new Options();
-        $options->set('isPhpEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('isRemoteEnabled', true);
-
-        $dompdf = new Dompdf($options);
-
-        $html = $this->renderView('facture/efacture.html.twig', ['facture' => $facture]);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-        $pdfContent = $dompdf->output();
-
-        $pdfAttachment = new \Swift_Attachment($pdfContent, 'facture.pdf', 'application/pdf');
-
-        $subject = '[IT Storm Consulting] Retard de paiement facture - ' . $facture->getNumfacture() . ' - ' . $facture->getClient()->getNom();
-        
-        $imageUrl = 'http://localhost:8000/img/itstormsig.jpg';
-
-        $signatureImage = (new Swift_Image($imageUrl))->setFilename('signature.png');
-        $totalTTC = $facture->getTotalTTC(); // Extract integer value from Facture object
-        $formattedTotalTTC = number_format($totalTTC, 2, ',', ' ');
-
-        $signatureHTML = '
-    <p>Bien Cordialement,</p>
-    <p style="margin: 0;">Farhat THABET, PhD</p>
-    <p style="margin: 0;">Président IT STORM Consulting</p>
-    <img src="' . $imageUrl . '" alt="Signature">';
-
-        $messageBody = '
-    <p>Bonjour,</p>
-    <br>
-    <p>Sauf erreur ou omission de notre part, nous constatons que votre compte client présente à ce jour un solde débiteur de : ' .$formattedTotalTTC .' £ .</p>
-    <p>Ce montant correspond à notre facture en pièce jointe restée impayée.</p>
-    <p>L\'échéance étant dépassée, nous vous demandons de bien vouloir régulariser cette situation. Dans le cas où votre règlement aurait été adressé entre temps, nous vous prions de ne pas tenir compte de la présente.</p>
-    <br>
-    ' . $signatureHTML;
-
-        $message = (new Swift_Message())
-            ->setSubject($subject)
-            ->setFrom('cherifmouhamed9242@yahoo.fr')
-            ->setTo('cherifmouhamed123@gmail.com')
-            ->setBody($messageBody, 'text/html');
-
-        $message->attach($pdfAttachment);
-
-        try {
-            $mailer->send($message);
-            $this->addFlash('success', 'La facture a été réenvoyée par e-mail avec succès.');
-            $facture->setEtat("envoyée");
-            $entityManager->persist($facture);  
-            $entityManager->flush();
-        } catch (TransportExceptionInterface $e) {
-            $this->addFlash('error', 'Une erreur s\'est produite lors de l\'envoi de la facture par e-mail.');
-        }
-        $this->addFlash('success', 'La facture ' . $facture->getNumfacture() . ' est envoyée avec succés à ' . $facture->getClient()->getNom());
-
-        return $this->redirectToRoute('app_facture_index');
-    }
 
 }

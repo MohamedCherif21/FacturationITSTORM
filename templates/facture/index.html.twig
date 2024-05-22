@@ -231,10 +231,10 @@ Factures
                                             class="fas fa-edit"></span> Modifier</a>
                                     <div class="dropdown-divider"></div>
 
-                                    <a id="btn-envoyer-email" class="dropdown-item btn-envoyer-email"  data-toggle="modal" data-target="#emailTypeModal" 
-                                        data-facture-id="{{ facture.id }}">
+                                    <a class="dropdown-item btn-envoyer-email" data-facture-id="{{ facture.id }}">
                                         <span class="fas fa-paper-plane"></span> Envoyer
                                     </a>
+
 
                                     <div class="dropdown-divider"></div>
                                     <a class="dropdown-item"
@@ -252,9 +252,8 @@ Factures
                                             class="fas fa-check"></i> Vérifier paiement</a>
 
                                     <div class="dropdown-divider"></div>
-                                     <a id="btn-envoyer-email" class="dropdown-item btn-envoyer-email"  data-toggle="modal" data-target="#emailTypeModal" 
-                                        data-facture-id="{{ facture.id }}">
-                                        <span class="fas fa-paper-plane"></span> Renvoyer
+                                     <a class="dropdown-item btn-envoyer-email" data-facture-id="{{ facture.id }}">
+                                        <span class="fas fa-paper-plane"></span> Faire une Relance
                                     </a>
 
                                     <div class="dropdown-divider"></div>
@@ -288,9 +287,9 @@ Factures
                                             class="fas fa-eye"></i> Détail</a>
 
                                     <div class="dropdown-divider"></div>
-                                    <a class="dropdown-item"
-                                        href="{{ path('send_rappel_email', {'id': facture.id}) }}"><i
-                                            class="fas fa-paper-plane"></i> faire une relance</a>
+                                    <a class="dropdown-item btn-envoyer-email" data-facture-id="{{ facture.id }}">
+                                        <span class="fas fa-paper-plane"></span> Faire une Relance
+                                    </a>
 
                                     <div class="dropdown-divider"></div>
                                     <a class="dropdown-item"
@@ -343,9 +342,9 @@ Factures
                                             class="fa fa-eye text-dark"></span> Voir</a>
 
                                     <div class="dropdown-divider"></div>
-                                    <a class="dropdown-item"
-                                        href="{{ path('send_rappel_email', {'id': facture.id}) }}"><i
-                                            class="fas fa-paper-plane"></i> faire une relance</a>
+                                    <a class="dropdown-item btn-envoyer-email" data-facture-id="{{ facture.id }}">
+                                        <span class="fas fa-paper-plane"></span> Faire une Relance
+                                    </a>
                                     <div class="dropdown-divider"></div>
                                     <a class="dropdown-item" href="{{ path('upload_pdf', {'id': facture.id}) }}"><i
                                             class="fas fa-check"></i> Revérifier paiement</a>
@@ -416,48 +415,51 @@ Factures
         <!-- //tab-con -->
     </div>
 
+
     <!-- Vue modale pour modifier l'email -->
-    <div class="modal fade" id="emailTypeModal" tabindex="-1" aria-labelledby="emailTypeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                <input type="hidden" id="facture_id_input" name="facture_id">
+    <div id="emailType">
+        <div class="modal fade show" id="emailTypeModal" aria-modal="true" role="dialog">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <input type="hidden" id="facture_id_input" name="facture_id">
 
-                    <h5 class="modal-title" id="emailTypeModalLabel">E-mail</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                        <h5 class="modal-title" id="emailTypeModalLabel">E-mail</h5>
+                        {# <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button> #}
+                    </div>
+                    {{ form_start(formemail) }}
+                    <div class="modal-body">
+
+                        <div class="form-group">
+                            {{ form_label(formemail.subject) }}
+                            {{ form_widget(formemail.subject, {'attr': {'class': 'form-control col-md-12', 'id': 'subject'}}) }}
+                            {{ form_errors(formemail.subject) }}
+                        </div>
+
+                        <div class="form-group">
+                            {{ form_label(formemail.body) }}
+                            {{ form_widget(formemail.body, {'attr': {'class': 'form-control col-md-12'}, 'id': 'body'}) }}
+                            {{ form_errors(formemail.body) }}
+                        </div>
+
+                        <div class="form-group" style="display:none">
+                            {{ form_label(formemail.type) }}
+                            {{ form_widget(formemail.type, {'attr': {'class': 'form-control col-md-12'}, 'id': 'type'}) }}
+                            {{ form_errors(formemail.type) }}
+                        </div>
+
+                        <div class="form-group" >
+                            <img src="{{ asset('img/piecejointe.png') }}" alt="PJ"  onclick="showfacture()"  class="brand-image" id="pjclick" style="width: 150px; height: 150px;animation: blink 3s infinite;cursor: pointer;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="sendEmailButton" class="btn btn-success">{{ button_label|default('Envoyer') }}</button>
+                        {# <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button> #}
+                    </div>
+                    {{ form_end(formemail) }}
                 </div>
-                 {{ form_start(formemail) }}
-                <div class="modal-body">
-
-                    <div class="form-group">
-                        {{ form_label(formemail.subject) }}
-                        {{ form_widget(formemail.subject, {'attr': {'class': 'form-control col-md-12', 'id': 'subject'}}) }}
-                        {{ form_errors(formemail.subject) }}
-                    </div>
-
-                    <div class="form-group">
-                        {{ form_label(formemail.body) }}
-                        {{ form_widget(formemail.body, {'attr': {'class': 'form-control col-md-12'}, 'id': 'body'}) }}
-                        {{ form_errors(formemail.body) }}
-                    </div>
-
-                     <div class="form-group" style="display:none">
-                        {{ form_label(formemail.type) }}
-                        {{ form_widget(formemail.type, {'attr': {'class': 'form-control col-md-12'}, 'id': 'type'}) }}
-                        {{ form_errors(formemail.type) }}
-                    </div>
-
-                    <div class="form-group" >
-                        <img src="{{ asset('img/piecejointe.png') }}" alt="PJ"  onclick="showfacture()"  class="brand-image" id="pjclick" style="width: 150px; height: 150px;animation: blink 3s infinite;cursor: pointer;">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button id="sendEmailButton" class="btn btn-success">{{ button_label|default('Envoyer') }}</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
-                </div>
-                 {{ form_end(formemail) }}
             </div>
         </div>
     </div>
@@ -507,24 +509,54 @@ $(document).ready(function() {
         $this.parent().css("background-color", "rgb(239, 239, 239)");
     });
      
-    $('.btn-envoyer-email').on('click', function() {
-    var facturId = event.currentTarget.getAttribute('data-facture-id');
-    document.getElementById('facture_id_input').value = facturId;
+  // Définition de la fonction de gestion de l'envoi d'e-mail
+function sendEmail(event, emailId, factureId) {
+    event.preventDefault();
+
+    $.ajax({
+        url: '/email/edit/' + emailId,
+        type: 'POST',
+        data: $('#emailTypeModal form').serialize(),
+        success: function(response) {
+            console.log('Email modifié avec succès !');
+            $.ajax({
+                url: '/facture/sendemail/' + factureId,
+                type: 'POST',
+                success: function(response) {
+                    console.log('Email envoyé avec succès !');
+                    $('#emailTypeModal').modal('hide');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Erreur lors de l\'envoi de l\'e-mail : ' + error);
+                }
+            });
+
+        },
+        error: function(xhr, status, error) {
+            console.error('Erreur lors de la modification de l\'e-mail : ' + error);
+        }
+    });
+}
+
+$('.btn-envoyer-email').on('click', function() {
     var factureId = $(this).data('facture-id');
+    $('#facture_id_input').val(factureId);
+
     $.ajax({
         url: '/facture/get-facture-details/' + factureId,
         type: 'GET',
-    success: function(response) {
-        var dateFacturation = response.dateFacturation;
-        var emailId = response.emailid;    
-        // var body = response.emailbody;
-        // var type = response.emailtype;
-        var body ='';
-        var type = '';
-        var subject = '';
-        var clientNom = response.clientNom;
+        success: function(response) {
 
-        if(response.etatfacture == 'envoyée'){
+            $('#emailTypeModal').modal('show');
+            var dateFacturation = response.dateFacturation;
+            var emailId = response.emailid;
+            var clientNom = response.clientNom;
+            var subject = '';
+            var body = '';
+            var type = '';
+
+            // Modèles d'e-mails
+             if(response.etatfacture == 'envoyée' || response.etatfacture == 'non-payée'){
              type = "Relance";
              subject = '[IT Storm Consulting] Retard de paiement facture - ' + response.numfacture + ' - ' + clientNom;
              body = '<p>Bonjour,</p>' +
@@ -563,66 +595,32 @@ $(document).ready(function() {
                            '<br>';    
         }
      
-        
-           
 
+            // Remplissage des champs dans le modal
+            var $subjectField = $('#emailTypeModal').find('.modal-body #email_template_subject');
+            var $bodyField = $('#emailTypeModal').find('.modal-body #body');
+            var $typeField = $('#emailTypeModal').find('.modal-body #type');
 
+            if ($subjectField.length > 0) {
+                // Définir la valeur du champ
+                $subjectField.val(subject);
+                $bodyField.val(body);
+                $typeField.val(type);
 
-            setTimeout(function() {
-                // Recherchez le champ #subject dans le modal
-                var $subjectField = $('#emailTypeModal').find('.modal-body #email_template_subject');
-
-                var $bodyField = $('#emailTypeModal').find('.modal-body #body');
-
-                var $typeField = $('#emailTypeModal').find('.modal-body #type');
-                // Vérifiez s'il a été trouvé
-                if ($subjectField.length > 0) {
-                    // Définissez la valeur du champ
-                    $subjectField.val(subject);
-
-                    $bodyField.val(body);
-                    $typeField.val(type);
-
-                   $('#sendEmailButton').on('click', function(event) {
-                            event.preventDefault();
-                            //  var emailId = $(this).data('email-id');
-                           
-                            $.ajax({
-                                url: '/email/edit/' + emailId,
-                                type: 'POST',
-                                data: $('#emailTypeModal form').serialize(),
-                                success: function(response) {
-                                console.log('Email modifié avec succès !');
-                                $.ajax({
-                                    url: '/facture/sendemail/' + factureId,
-                                    type: 'POST', 
-                                    success: function(response) {
-                                        console.log('Email envoyé avec succès !');
-                                        $('#emailTypeModal').modal('hide');
-                                    },
-                                    error: function(xhr, status, error) {
-                                        console.error('Erreur lors de l\'envoi de l\'e-mail : ' + error);
-                                    }
-                                });
-                                
-                            },
-                            error: function(xhr, status, error) {
-                                console.error('Erreur lors de la modification de l\'e-mail : ' + error);
-                            }
-                        });
-
-                       
-                    });
-                } else {
-                    console.log("Champ #subject introuvable dans le modal.");
-                }
-            }, 100);
+                // Définir l'événement de clic sur le bouton d'envoi d'e-mail
+                $('#sendEmailButton').off('click').on('click', function(event) {
+                    sendEmail(event, emailId, factureId);
+                });
+            } else {
+                console.log("Champ #subject introuvable dans le modal.");
+            }
         },
         error: function(xhr, status, error) {
             console.error(error);
         }
     });
 });
+
 
 });
     function showfacture() {

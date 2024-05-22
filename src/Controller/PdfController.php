@@ -53,52 +53,159 @@ class PdfController extends AbstractController
 
 
     #[Route('/upload-pdf/{id}', name: 'upload_pdf')]
-public function uploadPdf(Request $request, PdfExtractorService $pdfExtractor, int $id): Response
-{
-    $form = $this->createForm(PdfType::class);
-    $form->handleRequest($request);
+    public function uploadPdf(Request $request, PdfExtractorService $pdfExtractor,FactureRepository $factureRepository, int $id,EntityManagerInterface $entityManager): Response
+    {
+        $form = $this->createForm(PdfType::class);
+        $form->handleRequest($request);
+        $facture = $factureRepository->find($id);
 
-    if ($form->isSubmitted() && $form->isValid()) {
-        $pdfFiles = $form->get('pdfFiles')->getData();
+        $clientName = $facture->getClient()->getReferencebancaire();
+        $clientRef = 'REF.CLIENT:'.$facture->getClient()->getReferencebancaire();
+        $totalPaid = $facture->getTotalTTC();
 
-        // Vérifiez si un fichier a été téléchargé
-        if (count($pdfFiles) > 0) {
-            foreach ($pdfFiles as $pdfFile) {
-                /** @var UploadedFile $pdfFile */
-                if ($pdfFile->getClientOriginalExtension() !== 'pdf') {
-                    $this->addFlash('error', 'Le fichier téléchargé doit être un fichier PDF.');
-                    return $this->redirectToRoute('app_facture_index');
+        if ($form->isSubmitted() && $form->isValid()) {
+            $pdfFiles = $form->get('pdfFiles')->getData();
+            $pdfFilesCom=$form->get('pdfFilesCom')->getData();
+
+            // Vérifiez si un fichier a été téléchargé
+            if (count($pdfFiles) > 0) {
+                foreach ($pdfFiles as $pdfFile) {
+                    /** @var UploadedFile $pdfFile */
+                    if ($pdfFile->getClientOriginalExtension() !== 'pdf') {
+                        $this->addFlash('error', 'Le fichier téléchargé doit être un fichier PDF.');
+                        return $this->redirectToRoute('app_facture_index');
+                    }
+
+                    try {
+                        $fileName = uniqid() . '.' . $pdfFile->guessExtension();
+                        $pdfFile->move(
+                            $this->getParameter('pdf_directory'),
+                            $fileName
+                        );
+
+                        // Extract du texte du PDF
+                        $pdfFilePath = $this->getParameter('pdf_directory') . '/' . $fileName;
+                        $extractedText = $pdfExtractor->extractText($pdfFilePath);
+
+                        // Suppr du fichier temporaire
+                        unlink($pdfFilePath);
+
+                        return $this->redirectToRoute('process_extracted_text', ['extractedText' => $extractedText, 'id' => $id]);
+                    } catch (FileException $e) {
+                        $this->addFlash('error', 'Une erreur s\'est produite lors du téléchargement du fichier.');
+                    }
                 }
+            } else if (count($pdfFilesCom) > 0) {
+                foreach ($pdfFilesCom as $pdfFile) {
+                    /** @var UploadedFile $pdfFile */
+                    if ($pdfFile->getClientOriginalExtension() !== 'pdf') {
+                        $this->addFlash('error', 'Le fichier téléchargé doit être un fichier PDF.');
+                        return $this->redirectToRoute('app_facture_index');
+                    }
 
-                try {
-                    $fileName = uniqid() . '.' . $pdfFile->guessExtension();
-                    $pdfFile->move(
-                        $this->getParameter('pdf_directory'),
-                        $fileName
-                    );
+                    try {
+                        $fileName = uniqid() . '.' . $pdfFile->guessExtension();
+                        $pdfFile->move(
+                            $this->getParameter('pdf_directory'),
+                            $fileName
+                        );
 
-                    // Extract du texte du PDF
-                    $pdfFilePath = $this->getParameter('pdf_directory') . '/' . $fileName;
-                    $extractedText = $pdfExtractor->extractText($pdfFilePath);
+                        // Extract du texte du PDF
+                        $pdfFilePath = $this->getParameter('pdf_directory') . '/' . $fileName;
+                        $extractedText = $pdfExtractor->extractText($pdfFilePath);
 
-                    // Suppr du fichier temporaire
-                    unlink($pdfFilePath);
+                        // Suppr du fichier temporaire
+                        unlink($pdfFilePath);
 
-                    return $this->redirectToRoute('process_extracted_text', ['extractedText' => $extractedText, 'id' => $id]);
-                } catch (FileException $e) {
-                    $this->addFlash('error', 'Une erreur s\'est produite lors du téléchargement du fichier.');
+                        // return new Response($extractedText, Response::HTTP_OK, [
+                        //     'Content-Type' => 'text/plain',
+                        // ]);
+
+                        return $this->redirectToRoute('process_extracted_textlcl', ['extractedText' => $extractedText, 'id' => $id]);
+                    } catch (FileException $e) {
+                        $this->addFlash('error', 'Une erreur s\'est produite lors du téléchargement du fichier.');
+                    }
                 }
+               
             }
-        } else {
-            $this->addFlash('error', 'Aucun fichier PDF n\'a été téléchargé.');
+            else {
+                $this->addFlash('error', 'Aucun fichier PDF n\'a été téléchargé.');
+                return $this->redirectToRoute('app_facture_index');
+            }
         }
+
+        return $this->render('pdf/upload.html.twig', [
+            'form' => $form->createView(),
+        ]);
     }
 
-    return $this->render('pdf/upload.html.twig', [
-        'form' => $form->createView(),
-    ]);
-}
+    #[Route('/process-extracted-textlcl/{id}', name: 'process_extracted_textlcl')]
+    public function processExtractedTextLCL(Request $request, FactureRepository $factureRepository, int $id, EntityManagerInterface $entityManager): Response
+    {
+        $extractedText = $request->query->get('extractedText');
+        $facture = $factureRepository->find($id);
+    
+        $clientRef = 'REF.CLIENT:'.$facture->getClient()->getReferencebancaire();
+        $totalPaid = $facture->getTotalTTC();
+    
+        // Vérifiez si le texte extrait est fourni
+        if ($extractedText !== null) {
+            // Vérifiez si la référence du client est présente dans le texte extrait
+            $clientPosition = strpos($extractedText, $clientRef);
+            if ($clientPosition !== false) {
+                // Définissez l'index de départ pour rechercher le montant
+                $startIndex = $clientPosition + strlen($clientRef);
+                $remainingText = substr($extractedText, $startIndex);
+    
+                // Expression régulière pour extraire tous les montants après la référence client
+                $pattern = '/\b(\d{1,3}(?: \d{3})*,\d{2})\b/';
+                preg_match_all($pattern, $remainingText, $matches);
 
+                // Conversion des montants extraits en float
+                $extractedAmounts = array_map(function($amount) {
+                    // Remplacer les espaces par des rien et les virgules par des points
+                    return (float) str_replace(',', '.', str_replace(' ', '', $amount));
+                }, $matches[1]);
+    
+                // Filtrer les montants qui correspondent exactement au total payé
+                $matchingAmounts = array_filter($extractedAmounts, function($amount) use ($totalPaid) {
+                    return $amount === $totalPaid;
+                });
+    
+                // Mettre à jour l'état de la facture en fonction du nombre de montants correspondants trouvés
+                if (count($matchingAmounts) === 1) {
+                    $facture->setEtat('payée');
+                } elseif (count($matchingAmounts) > 1) {
+                    $facture->setEtat('à_vérifier');
+                } else {
+                    $facture->setEtat('non-payée');
+                }
+            } else {
+                $facture->setEtat('non-payée');
+            }
+        } else {
+            // Aucun texte extrait fourni, donc la facture est considérée comme non payée
+            $this->addFlash('success', 'Les états des factures ont été mis à jour avec succès.');
+            return $this->redirectToRoute('app_facture_index');
+        }
+    
+        $entityManager->persist($facture);
+        $entityManager->flush();
+    
+        // Affichage du message correspondant à l'état de la facture
+        if ($facture->getEtat() === 'payée') {
+            $this->addFlash('success', 'La facture ' . $facture->getNumfacture() . ' du client ' . $facture->getClient()->getNom() . ' est payée.');
+        } elseif ($facture->getEtat() === 'à_vérifier') {
+            $this->addFlash('warning', 'La facture ' . $facture->getNumfacture() . ' du client ' . $facture->getClient()->getNom() . ' nécessite une vérification.');
+        } elseif ($facture->getEtat() === 'non-payée') {
+            $this->addFlash('error', 'La facture ' . $facture->getNumfacture() . ' du client ' . $facture->getClient()->getNom() . ' n\'est pas encore payée.');
+        } else {
+            $this->addFlash('error', 'Erreur, veuillez réessayer.');
+        }
+        
+        return $this->redirectToRoute('app_facture_index');
+    }
+    
 
 #[Route('/process-extracted-text/{id}', name: 'process_extracted_text')]
 public function processExtractedText(Request $request, FactureRepository $factureRepository, int $id, EntityManagerInterface $entityManager): Response

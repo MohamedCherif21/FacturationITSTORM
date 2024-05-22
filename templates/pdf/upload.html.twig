@@ -15,12 +15,21 @@
     <hr/>
 
     {{ form_start(form) }}
-    <div >
+    <div>
         <div class="col-md-4">
             <div class="form-group">
                 {{ form_label(form.pdfFiles) }}
                 {{ form_widget(form.pdfFiles, {'attr': {'class': 'form-control', 'multiple': true}}) }}
                 {{ form_errors(form.pdfFiles) }}
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                {{ form_label(form.pdfFilesCom) }}
+                {{ form_widget(form.pdfFilesCom, {'attr': {'class': 'form-control', 'multiple': true}}) }}
+                {{ form_errors(form.pdfFilesCom) }}
             </div>
 
         </div>
