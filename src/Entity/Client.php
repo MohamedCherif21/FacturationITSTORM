@@ -54,6 +54,35 @@ class Client
         $this->facture = new ArrayCollection();
         
     }
+    /**
+     * @return Collection|Facture[]
+     */
+    public function getFactures(): Collection
+    {
+        return $this->facture;
+    }
+
+    public function addFacture(Facture $facture): self
+    {
+        if (!$this->facture->contains($facture)) {
+            $this->facture[] = $facture;
+            $facture->setClient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFacture(Facture $facture): self
+    {
+        if ($this->facture->removeElement($facture)) {
+            // set the owning side to null (unless already changed)
+            if ($facture->getClient() === $this) {
+                $facture->setClient(null);
+            }
+        }
+
+        return $this;
+    }
 
     public function getId(): ?int
     {

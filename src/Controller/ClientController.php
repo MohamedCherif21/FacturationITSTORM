@@ -7,10 +7,9 @@ use App\Form\ClientType;
 use App\Repository\ClientRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\Request;
-
 
 #[Route('/client')]
 class ClientController extends AbstractController
@@ -36,7 +35,7 @@ class ClientController extends AbstractController
             $entityManager->persist($client);
             $entityManager->flush();
 
-           return $this->redirectToRoute('app_client_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_client_index', [], Response::HTTP_SEE_OTHER);
         }
 
         return $this->render('client/new.html.twig', [
@@ -45,11 +44,12 @@ class ClientController extends AbstractController
         ]);
     }
 
-      #[Route('/{id}', name: 'client_show', methods: ['GET'])]
+    #[Route('/{id}', name: 'client_show', methods: ['GET'])]
     public function show(Client $client): Response
     {
         return $this->render('client/show.html.twig', [
             'client' => $client,
+            'factures' => $client->getFactures(),
         ]);
     }
 
@@ -74,7 +74,7 @@ class ClientController extends AbstractController
     #[Route('/{id}', name: 'client_delete', methods: ['POST'])]
     public function delete(Request $request, Client $client, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$client->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $client->getId(), $request->request->get('_token'))) {
             $entityManager->remove($client);
             $entityManager->flush();
         }

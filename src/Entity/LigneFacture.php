@@ -33,16 +33,16 @@ class LigneFacture
 
     #[ORM\ManyToOne(targetEntity: Facture::class, inversedBy: 'lignesFacture')]
     #[ORM\JoinColumn(name: 'facture_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
-    private ?Facture $facture;
+    private ?Facture $facture= null;
 
     
     #[ORM\ManyToOne(targetEntity: Service::class)]
     #[ORM\JoinColumn(name: 'service_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
-    private ?Service $service;
+    private ?Service $service= null;
 
     #[ORM\ManyToOne(targetEntity: Prestataire::class)]
     #[ORM\JoinColumn(name: 'prestataire_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
-    private Prestataire $prestataire;
+    private ?Prestataire $prestataire= null ;
 
 
     public function getPrestataire(): ?Prestataire

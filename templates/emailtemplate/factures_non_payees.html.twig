@@ -1,0 +1,6 @@
+<p>Les factures suivantes ne sont pas encore payées :</p>
+<ul>
+    {% for facture in factures %}
+        <li><strong>Facture {{ facture.numfacture }}</strong> du client <strong>{{ facture.client.nom }}</strong>, échéance <strong>{{ facture.dateEcheance|date('Y-m-d') }}</strong> (retard de <strong>{{ facture.nbJoursRetard }}</strong> jours).</li>
+    {% endfor %}
+</ul>

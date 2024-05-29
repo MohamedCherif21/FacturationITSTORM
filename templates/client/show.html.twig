@@ -12,15 +12,68 @@
     <br/>
     
     <div style="padding-top: 40px;">
+        <p><strong>Référence Bancaire:</strong> {{ client.referencebancaire }}</p>
         <p><strong>Email:</strong> {{ client.email }}</p>
         <p><strong>Numéro de téléphone:</strong> {{ client.numtel }}</p>
         <p><strong>Adresse:</strong> {{ client.adresse }}</p>
         <p><strong>N°Siret:</strong> {{ client.siret }}</p>
     </div>
+    <div style="padding:15px;">
+        <a  class="btn btn-primary" href="{{ path('client_edit', {'id': client.id}) }}"><span
+                                            class="fas fa-edit"></span> Modifier</a> 
+    </div>
+    <br>
+    <hr/>
+    
+    <h2>Historique de facturation</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Numéro de facture</th>
+                <th>Date de facturation</th>
+                <th>Date d'échéance</th>
+                <th>Montant TTC</th>
+                <th>Etat</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for facture in factures %}
+                <tr>
+                    <td><a href="{{ path('app_facture_show', {'id': facture.id}) }}">{{ facture.numFacture  }}</a></td>
+                    <td>{{ facture.dateFacturation|date('Y-m-d') }}</td>
+                    <td>{{ facture.dateEcheance|date('Y-m-d') }}</td>
+                    <td>{{ facture.totalTTC }}</td>
+                    <td>
+                                {% set badgeClass = '' %}
+                                {% set iconClass = '' %}
+                                {% if facture.etat == 'ouverte' %}
+                                {% set badgeClass = 'badge-success' %}
+                                {% set iconClass = 'fas fa-lock-open' %}
+                                {% elseif facture.etat == 'envoyée' %}
+                                {% set badgeClass = 'badge-warning' %}
+                                {% set iconClass = 'fas fa-paper-plane' %}
+                                {% elseif facture.etat == 'payée' %}
+                                {% set badgeClass = 'badge-primary' %}
+                                {% set iconClass = 'fas fa-handshake' %}
+                                {% elseif facture.etat == 'non-payée' %}
+                                {% set badgeClass = 'badge-danger' %}
+                                {% set iconClass = 'fas fa-handshake-slash' %}
+                                {% elseif facture.etat == 'à_vérifier' %}
+                                {% set badgeClass = 'badge-info blinking' %}
+                                {% set iconClass = 'fas fa-exclamation' %}
+
+                                {% endif %}
+                                <span class="badge {{ badgeClass }}">
+                                    <i class="{{ iconClass }}"></i> {{ facture.etat }}
+                                </span>
+                            </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
     <hr/>
     <div>
         <a class="btn btn-dark" href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
-        <a  class="btn btn-primary" href="{{ path('client_edit', {'id': client.id}) }}">Modifier</a> 
     </div>
 {% endblock %}

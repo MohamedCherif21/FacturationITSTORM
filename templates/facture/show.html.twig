@@ -45,7 +45,9 @@
         </div>
         <div class="col-md-6" style="text-align:right;">
             <p style="font-weight:bold;">Facture : {{ facture.dateFacturation|date('F Y') }}</p>
-            <p style="font-weight:bold;">Date d'échéance : {{ facture.delaiPaiement }} Jrs</p>
+            {% set difference = facture.dateEcheance|date('U') - facture.dateFacturation|date('U') %}
+            {% set joursRestants = difference / (3600 * 24) %}
+            <p style="font-weight:bold;">Date d'échéance : {{ joursRestants }} Jrs</p>
             <p style="font-weight:bold;">Date: {{ facture.dateFacturation|date('d/m/Y') }}</p>
         </div>
     </div>

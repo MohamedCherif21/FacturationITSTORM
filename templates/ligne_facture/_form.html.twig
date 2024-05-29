@@ -1,8 +1,9 @@
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-<hr/>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+    integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<hr />
 <h2>Facture</h2>
 
-<hr/>
+<hr />
 {{ form_start(form, {'attr': {'id': 'formadd', 'novalidate': 'novalidate'}}) }}
 
 <div class="row">
@@ -20,7 +21,6 @@
         </div>
     </div>
 
-
     <div class="col-md-6">
         <div class="form-group">
             {{ form_label(facture.dateFacturation) }}
@@ -28,13 +28,13 @@
         </div>
     </div>
 
-    <div class="col-md-6" >
+    <div class="col-md-6">
         <div class="form-group">
             {{ form_label(facture.dateEcheance) }}
-            {{ form_widget(facture.dateEcheance, {'attr': {'class': 'form-control', 'id': 'dateEcheance'}}) }}
+            {{ form_widget(facture.dateEcheance, {'attr': {'class': 'form-control', 'onchange':'updateDateEcheance()'}})
+            }}
         </div>
     </div>
-
 
     {# <div class="col-md-6">
         <div class="form-group" style="display:none;">
@@ -42,12 +42,12 @@
             {{ form_widget(facture.delaiPaiement, {'attr': {'class': 'form-control', 'id': 'dateEcheance'}}) }}
         </div>
     </div> #}
-    
+
 </div>
-<hr/>
+<hr />
 <h2>Ajouter Services</h2>
-<hr/>
- <div class="row align-items-end">
+<hr />
+<div class="row align-items-end">
     <div class="col-md-4">
         <div class="form-group">
             {{ form_label(form.service) }}
@@ -59,11 +59,11 @@
     <div class="col-md-2">
         <div class="form-group">
             {{ form_label(form.prestataire) }}
-                {{ form_widget(form.prestataire, {'attr': {'class': 'form-control'}}) }}
-                {{ form_errors(form.prestataire) }}
+            {{ form_widget(form.prestataire, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.prestataire) }}
         </div>
     </div>
-     <div class="col-md-2">
+    <div class="col-md-2">
         <div class="form-group">
             {{ form_label(form.prixUnitaire) }}
             {{ form_widget(form.prixUnitaire, {'attr': {'class': 'form-control'}}) }}
@@ -79,17 +79,12 @@
         </div>
     </div>
 
-    
-
     <div class="col-md-2">
         <div class="form-group">
-            <button   type="button"  class="btn btn-success form-control" onclick="addline()">Ajouter</button>
-        </div>  
+            <button type="button" class="btn btn-success form-control" onclick="addline()">Ajouter</button>
+        </div>
     </div>
 </div>
-
-
-
 
 <table class="table table-striped" id="ligneFactureTable">
     <thead>
@@ -105,122 +100,272 @@
     </thead>
     <tbody>
         {% for ligneFacture in lfacture.lignesFacture %}
-           <tr data-id="{{ ligneFacture.id }}">
-                <td>{{ ligneFacture.service }}</td>
-                <td>{{ ligneFacture.prestataire }}</td>
-                <td>{{ ligneFacture.nbJours }}</td>
-                <td>{{ ligneFacture.prixUnitaire }}</td>
-                <td>{{ ligneFacture.taxeTVA }}%</td>
-                <td>{{ ligneFacture.montantTotalHT|number_format(2, ',', ' ') }}</td>
+        <tr data-id="{{ ligneFacture.id }}">
+            <td>{{ ligneFacture.service }}</td>
+            <td>{{ ligneFacture.prestataire }}</td>
+            <td>{{ ligneFacture.nbJours }}</td>
+            <td>{{ ligneFacture.prixUnitaire }}</td>
+            <td>{{ ligneFacture.taxeTVA }}%</td>
+            <td>{{ ligneFacture.montantTotalHT|number_format(2, ',', ' ') }}</td>
 
-                <td>
-                    <button class="btn btn-danger" onclick="deleteLigneFacture({{ ligneFacture.id }})">Supprimer</button>
-                </td>
-            </tr>
+            <td>
+                <button class="btn btn-danger" onclick="deleteLigneFacture({{ ligneFacture.id }})">Supprimer</button>
+            </td>
+        </tr>
         {% endfor %}
 
     </tbody>
 </table>
-<hr/>
-<a class="btn btn-secondary" href="{{ path('app_facture_index') }}"><i class="fas fa-arrow-left"></i> Retour</a>                        
+<hr />
+<a class="btn btn-secondary" href="{{ path('app_facture_index') }}"><i class="fas fa-arrow-left"></i> Retour</a>
 {# <a class="btn btn-primary" href="{{ path('send_facturx_email', {'id': lfacture.id}) }}"><i class="fas fa-file-invoice"></i> Envoyer factur-x</a> #}
-<a class="btn btn-primary" href="{{ path('upload_pdf', {'id': lfacture.id}) }}"><i class="fas fa-check"></i> Vérifier paiement</a>
-<a class="btn btn-success" href="{{ path('send_facture_email', {'id': lfacture.id}) }}"><i class="fas fa-paper-plane"></i> Envoyer</a>
+<a class="btn btn-primary" href="{{ path('upload_pdf', {'id': lfacture.id}) }}"><i class="fas fa-check"></i> Vérifier
+    paiement</a>
+<a class="btn btn-success btn-envoyer-email" data-facture-id="{{ lfacture.id }}"><i class="fas fa-paper-plane"></i>
+    Envoyer</a>
 
- 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+    integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 {{ form_end(form) }}
+<div id="emailType">
+    <div class="modal fade show" id="emailTypeModal" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <input type="hidden" id="facture_id_input" name="facture_id">
 
+                    <h5 class="modal-title" id="emailTypeModalLabel">E-mail</h5>
+                    {# <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button> #}
+                </div>
+                {{ form_start(formemail) }}
+                <div class="modal-body">
+
+                    <div class="form-group">
+                        {{ form_label(formemail.subject) }}
+                        {{ form_widget(formemail.subject, {'attr': {'class': 'form-control col-md-12', 'id': 'subject'}})
+                        }}
+                        {{ form_errors(formemail.subject) }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form_label(formemail.body) }}
+                        {{ form_widget(formemail.body, {'attr': {'class': 'form-control col-md-12'}, 'id': 'body'}) }}
+                        {{ form_errors(formemail.body) }}
+                    </div>
+
+                    <div class="form-group" style="display:none">
+                        {{ form_label(formemail.type) }}
+                        {{ form_widget(formemail.type, {'attr': {'class': 'form-control col-md-12'}, 'id': 'type'}) }}
+                        {{ form_errors(formemail.type) }}
+                    </div>
+
+                    <div class="form-group">
+                        <img src="{{ asset('img/piecejointe.png') }}" alt="PJ" onclick="showfacture()"
+                            class="brand-image" id="pjclick"
+                            style="width: 150px; height: 150px;animation: blink 3s infinite;cursor: pointer;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="sendEmailButton" class="btn btn-success">{{ button_label|default('Envoyer') }}</button>
+                    {# <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button> #}
+                </div>
+                {{ form_end(formemail) }}
+            </div>
+        </div>
+    </div>
+</div>
 <script>
-
-// $(function () {
-//     $("#ligneFactureTable").DataTable({
-//         "responsive": true,
-//         "lengthChange": false,
-//         "autoWidth": false,
-//         "searching": false,
-//         "info": false,
-//         "bPaginate": false,
-//         "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-//     }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-
-// });
+    // $(function () {
+    //     $("#ligneFactureTable").DataTable({
+    //         "responsive": true,
+    //         "lengthChange": false,
+    //         "autoWidth": false,
+    //         "searching": false,
+    //         "info": false,
+    //         "bPaginate": false,
+    //         "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+    //     }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+    // });
     function addline() {
         $.ajax({
             type: 'POST',
             url: $('#formadd').attr('action'),
             data: $('#formadd').serialize(),
             dataType: 'json',
-            success: function (response) {
+            success: function(response) {
                 var formattedAmount = parseFloat(response.montantTotalHT).toFixed(2);
                 var parts = formattedAmount.split('.');
                 var integerPart = parts[0];
                 var decimalPart = parts[1];
                 var numberWithThousands = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                 var finalAmount = numberWithThousands + ',' + decimalPart;
-              var newRow = '<tr data-id="' + response.id + '">' +
-                '<td>' + response.service.description + '</td>' +
-                '<td>' + response.prestataire.nom + '</td>' +
-                '<td>' + response.nbJours + '</td>' +
-                '<td>' + response.prixUnitaire + '</td>' +
-                '<td>' + response.taxeTVA + '%' + '</td>'+
-                '<td>' + finalAmount + '</td>'+
-                '<td><button class="btn btn-danger" onclick="deleteLigneFacture('  + parseInt(response.id) + ')">Supprimer</button></td>' +
-                '</tr>';
-            $('#ligneFactureTable tbody').append(newRow); 
-        },
-            error: function (xhr, status, error) {
+                var newRow = '<tr data-id="' + response.id + '">' +
+                    '<td>' + response.service.description + '</td>' +
+                    '<td>' + response.prestataire.nom + '</td>' +
+                    '<td>' + response.nbJours + '</td>' +
+                    '<td>' + response.prixUnitaire + '</td>' +
+                    '<td>' + response.taxeTVA + '%' + '</td>' +
+                    '<td>' + finalAmount + '</td>' +
+                    '<td><button class="btn btn-danger" onclick="deleteLigneFacture(' + parseInt(response
+                        .id) + ')">Supprimer</button></td>' +
+                    '</tr>';
+                $('#ligneFactureTable tbody').append(newRow);
+                $('#formadd')[0].reset();
+            },
+            error: function(xhr, status, error) {
                 console.error(xhr.responseText);
             }
         });
     }
 
-      function deleteLigneFacture(ligneFactureId) {
-            if (confirm("Êtes-vous sûr de vouloir supprimer cette ligne de facture ?")) {
-                $.ajax({
-                    type: 'POST',
-                    url: '/facture/line/' + ligneFactureId,
-                    success: function(response) {
-                        alert(response.message);
-                        $('#ligneFactureTable tbody tr[data-id="' + ligneFactureId + '"]').remove();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText);
-                        alert("Une erreur s'est produite lors de la suppression de la ligne de facture.");
-                    }
-                });
-            }
+    function deleteLigneFacture(ligneFactureId) {
+        event.preventDefault();
+        if (confirm("Êtes-vous sûr de vouloir supprimer cette ligne de facture ?")) {
+            $.ajax({
+                type: 'POST',
+                url: '/facture/line/' + ligneFactureId,
+                success: function(response) {
+                    alert(response.message);
+                    $('#ligneFactureTable tbody tr[data-id="' + ligneFactureId + '"]').remove();
+                },
+                error: function(xhr, status, error) {
+                    console.error(xhr.responseText);
+                    alert("Une erreur s'est produite lors de la suppression de la ligne de facture.");
+                }
+            });
+        }
     }
-
     // Détecter le changement de la date d'échéance et soumettre automatiquement le formulaire
-    $('#facture_dateEcheance').change(function() {
-        $('#formadd').submit();
-    });
-$(document).ready(function() {
+    // $('#facture_dateEcheance').change(function() {
+    //     $('#formadd').submit();
+    // });
     // Fonction pour mettre à jour la date d'échéance en fonction de la date de facturation et du délai de paiement
     function updateDateEcheance() {
+        event.preventDefault();
         // Récupérer la date de facturation et le délai de paiement sélectionné
         var dateFacturation = new Date($('#facture_dateFacturation').val());
         var delaiPaiement = parseInt($('#facture_delaiPaiement').val());
-
         // Vérifier si la date de facturation est valide et si le délai de paiement est un nombre
         if (!isNaN(dateFacturation.getTime()) && !isNaN(delaiPaiement)) {
             // Calculer la nouvelle date d'échéance en ajoutant le délai de paiement en jours à la date de facturation
             var dateEcheance = new Date(dateFacturation.getTime());
             dateEcheance.setDate(dateEcheance.getDate() + delaiPaiement);
-
             // Mettre à jour la valeur du champ de date d'échéance avec la nouvelle date calculée
             var formattedDateEcheance = dateEcheance.toISOString().slice(0, 10); // Format AAAA-MM-JJ
             $('#facture_dateEcheance').val(formattedDateEcheance);
         }
     }
 
-    // Écouter les changements sur les champs de date de facturation et de délai de paiement
-    $('#facture_dateFacturation, #facture_delaiPaiement').change(updateDateEcheance);
+    function sendEmail(event, emailId, factureId) {
+        event.preventDefault();
+        $.ajax({
+            url: '/email/edit/' + emailId,
+            type: 'POST',
+            data: $('#emailTypeModal form').serialize(),
+            success: function(response) {
+                console.log('Email modifié avec succès !');
+                $.ajax({
+                    url: '/facture/sendemail/' + factureId,
+                    type: 'POST',
+                    success: function(response) {
+                        console.log('Email envoyé avec succès !');
+                        $('#emailTypeModal').modal('hide');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Erreur lors de l\'envoi de l\'e-mail : ' + error);
+                    }
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Erreur lors de la modification de l\'e-mail : ' + error);
+            }
+        });
+    }
+    $(document).ready(function() {
+        $('.btn-envoyer-email').on('click', function() {
+            var factureId = $(this).data('facture-id');
+            $('#facture_id_input').val(factureId);
+            $.ajax({
+                url: '/facture/get-facture-details/' + factureId,
+                type: 'GET',
+                success: function(response) {
+                    $('#emailTypeModal').modal('show');
+                    var dateFacturation = response.dateFacturation;
+                    var emailId = response.emailid;
+                    var clientNom = response.clientNom;
+                    var subject = '';
+                    var body = '';
+                    var type = '';
+                    // Modèles d'e-mails
+                    if (response.etatfacture == 'envoyée' || response.etatfacture ==
+                        'non-payée') {
+                        type = "Relance";
+                        subject = '[IT Storm Consulting] Retard de paiement facture - ' +
+                            response.numfacture + ' - ' + clientNom;
+                        body = '<p>Bonjour,</p>' +
+                            '<br>' +
+                            '<p>Sauf erreur ou omission de notre part, nous constatons que votre compte client présente à ce jour un solde débiteur de : ' +
+                            response.montant + ' £ .</p>' +
+                            '<p>Ce montant correspond à notre facture en pièce jointe restée impayée.</p>' +
+                            '<p>L\'échéance étant dépassée, nous vous demandons de bien vouloir régulariser cette situation. Dans le cas où votre règlement aurait été adressé entre temps, nous vous prions de ne pas tenir compte de la présente.</p>' +
+                            '<p>Bien Cordialement,</p>' +
+                            '<p style="margin: 0;">Farhat THABET, PhD</p>' +
+                            '<p style="margin: 0;">Président IT STORM Consulting</p>' +
+                            '<br>';
+                    } else if (response.etatfacture == 'ouverte') {
+                        type = "PremierEnvoie";
+                        subject = 'Facture ' + dateFacturation + ' - ' + clientNom;
+                        body = '<p>Bonjour,</p>' +
+                            '<br>' +
+                            '<p>Veuillez trouver ci-joint les factures liées à nos prestations, pour la période indiquée dans l\'objet de ce mail.</p>' +
+                            '<p>En attendant, nous restons à votre disposition pour tout complément d\'information.</p>' +
+                            '<p>Bien Cordialement,</p>' +
+                            '<p style="margin: 0;">Farhat THABET, PhD</p>' +
+                            '<p style="margin: 0;">Président IT STORM Consulting</p>' +
+                            '<br>';
+                    } else {
+                        type = "Autre";
+                        subject = 'Facture ' + dateFacturation + ' - ' + clientNom;
+                        body = '<p>Bonjour,</p>' +
+                            '<br>' +
+                            '<p>Veuillez trouver ci-joint les factures liées à nos prestations, pour la période indiquée dans l\'objet de ce mail.</p>' +
+                            '<p>En attendant, nous restons à votre disposition pour tout complément d\'information.</p>' +
+                            '<p>Bien Cordialement,</p>' +
+                            '<p style="margin: 0;">Farhat THABET, PhD</p>' +
+                            '<p style="margin: 0;">Président IT STORM Consulting</p>' +
+                            '<br>';
+                    }
+                    // Remplissage des champs dans le modal
+                    var $subjectField = $('#emailTypeModal').find(
+                        '.modal-body #email_template_subject');
+                    var $bodyField = $('#emailTypeModal').find('.modal-body #body');
+                    var $typeField = $('#emailTypeModal').find('.modal-body #type');
+                    if ($subjectField.length > 0) {
+                        // Définir la valeur du champ
+                        $subjectField.val(subject);
+                        $bodyField.val(body);
+                        $typeField.val(type);
+                        // Définir l'événement de clic sur le bouton d'envoi d'e-mail
+                        $('#sendEmailButton').off('click').on('click', function(event) {
+                            sendEmail(event, emailId, factureId);
+                        });
+                    } else {
+                        console.log("Champ #subject introuvable dans le modal.");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+    });
 
-    // Appeler la fonction pour mettre à jour la date d'échéance au chargement de la page
-    updateDateEcheance();
-});
-
-
+    function showfacture() {
+            var factureId = $('#facture_id_input').val();
+            //  nouvelle fenêtre
+            window.open('/facture/' + factureId, '_blank');
+        }
 </script>
