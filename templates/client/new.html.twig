@@ -3,37 +3,68 @@
 {% block title %}Nouveau client{% endblock %}
 
 {% block body %}
-{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
-    <h2>Nouveau client</h2>
-    <hr>
-      {{ form_label(form.nom) }}
-    {{ form_widget(form.nom, {'attr': {'class': 'form-control col-md-4'}}) }}
-    {{ form_errors(form.nom) }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+        <h2>Nouveau client</h2>
+        <hr>
+        {{ form_label(form.nom) }}
+        {{ form_widget(form.nom, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.nom) }}
 
-    {{ form_label(form.email) }}
-    {{ form_widget(form.email, {'attr': {'class': 'form-control col-md-4'}}) }}
-    {{ form_errors(form.email) }}
+        {{ form_label(form.email) }}
+        {{ form_widget(form.email, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.email) }}
 
-    {{ form_label(form.siret) }}
-    {{ form_widget(form.siret, {'attr': {'class': 'form-control col-md-4'}}) }}
-    {{ form_errors(form.siret) }}
+        {{ form_label(form.siret) }}
+        {{ form_widget(form.siret, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.siret) }}
 
-     {{ form_label(form.referencebancaire) }}
-    {{ form_widget(form.referencebancaire, {'attr': {'class': 'form-control col-md-4'}}) }}
-    {{ form_errors(form.referencebancaire) }}
+        {{ form_label(form.referencebancaire) }}
+        {{ form_widget(form.referencebancaire, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.referencebancaire) }}
 
     {{ form_label(form.numtel) }}
-    {{ form_widget(form.numtel, {'attr': {'class': 'form-control col-md-4'}}) }}
+    <div class="input-group">
+        {{ form_widget(form.pays, {'attr': {'class': 'form-control col-md-2'}}) }}
+        {{ form_widget(form.numtel, {'attr': {'class': 'form-control col-md-2'}}) }}
+    </div>
     {{ form_errors(form.numtel) }}
+    
+        {{ form_label(form.adresse) }}
+        {{ form_widget(form.adresse, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.adresse) }}
 
-    {{ form_label(form.adresse) }}
-    {{ form_widget(form.adresse, {'attr': {'class': 'form-control col-md-4'}}) }}
-    {{ form_errors(form.adresse) }}
+        {{ form_label(form.contrat) }}
+        {{ form_widget(form.contrat, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.contrat) }}
 
+        <hr/>
+        <a class="btn btn-dark" href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
+        <button class="btn btn-success">{{ button_label|default('Save') }}</button>
+    {{ form_end(form) }}
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const phoneInputField = document.querySelector("#phone");
+            const phoneInput = window.intlTelInput(phoneInputField, {
+                initialCountry: "auto",
+                geoIpLookup: function(callback) {
+                    fetch('https://ipinfo.io?token=<your_token>', { headers: { 'Accept': 'application/json' }})
+                        .then((resp) => resp.json())
+                        .then((resp) => {
+                            const countryCode = (resp && resp.country) ? resp.country : "fr";
+                            callback(countryCode);
+                        });
+                },
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+            });
 
-    <hr/>
-    <a class="btn btn-dark" href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
-    <button class="btn btn-success">{{ button_label|default('Save') }}</button>
-
+            phoneInputField.addEventListener("countrychange", function() {
+                const countryData = phoneInput.getSelectedCountryData();
+                phoneInputField.value = '+' + countryData.dialCode;
+            });
+        });
+    </script>
 {% endblock %}

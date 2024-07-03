@@ -55,6 +55,9 @@ class Facture
     #[ORM\Column(type: "float", nullable: true)]
     private ?float $totaltaxe = null;
 
+    #[ORM\Column(type: "boolean", nullable: true)]
+    private ?bool $isDeleted = false;
+
     #[ORM\OneToMany(mappedBy: 'facture', targetEntity: LigneFacture::class, cascade: ['persist', 'remove'])]
     private Collection $lignesFacture;
 
@@ -94,6 +97,17 @@ class Facture
         $dueDateTime = $this->getDateEcheance();
         $diffInDays = date_diff($dueDateTime, $currentDate)->format('%a');
         return abs($diffInDays);
+    }
+
+    public function getIsDeleted(): bool
+    {
+        return $this->isDeleted;
+    }
+
+    public function setIsDeleted(bool $isDeleted): self
+    {
+        $this->isDeleted = $isDeleted;
+        return $this;
     }
 
     public function getDelaiPaiement(): ?int

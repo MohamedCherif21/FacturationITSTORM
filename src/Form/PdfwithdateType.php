@@ -19,13 +19,24 @@ class PdfwithdateType extends AbstractType
         $builder
  
         ->add('pdfFiles', FileType::class, [
-            'label' => 'Relevés bancaires',
+            'label' => 'Relevés bancaires Quanto',
             'multiple' => true,
             'required' => false,
             'attr' => [
                 'accept' => '.pdf', 
             ],
         ])
+
+        ->add('pdfFilesCom', FileType::class, [
+            'label' => 'Relevés bancaires LCL',
+            'multiple' => true,
+            'required' => false,
+            'attr' => [
+                'accept' => '.pdf', 
+            ],
+        ])
+
+        
         
             ->add('startDate', DateType::class, [
                 'label' => 'Du',

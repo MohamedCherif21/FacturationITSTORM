@@ -37,8 +37,12 @@ class Client
     #[ORM\Column(length: 255)]
     private ?string $referencebancaire = null;
 
+    #[ORM\Column(type:"string", length:2)]
+    private ?string $pays = null;
 
-    #[ORM\OneToMany(mappedBy: 'client', targetEntity: Facture::class)]
+
+
+    #[ORM\OneToMany(mappedBy: 'customer', targetEntity: Facture::class)]
     private Collection $facture;
 
 
@@ -84,6 +88,18 @@ class Client
         return $this;
     }
 
+
+    public function getPays(): ?string
+    {
+        return $this->pays;
+    }
+
+    public function setPays(string $pays): self
+    {
+        $this->pays = $pays;
+
+        return $this;
+    }
     public function getId(): ?int
     {
         return $this->id;

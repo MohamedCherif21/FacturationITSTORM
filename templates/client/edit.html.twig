@@ -5,18 +5,41 @@
 {% block body %}
     <h2>Modifier client</h2>
  <hr/>
-    {{ form_start(form) }}
-        {{ form_row(form.nom, {'attr': {'class': 'form-control col-md-4'}}) }}
-        {{ form_row(form.email, {'attr': {'class': 'form-control col-md-4'}}) }}
-        {{ form_row(form.numtel, {'attr': {'class': 'form-control col-md-4'}}) }}
-        {{ form_row(form.adresse, {'attr': {'class': 'form-control col-md-4'}}) }}
-        {{ form_row(form.siret, {'attr': {'class': 'form-control col-md-4'}}) }}
-    
+   {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+        {{ form_label(form.nom) }}
+        {{ form_widget(form.nom, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.nom) }}
 
+        {{ form_label(form.email) }}
+        {{ form_widget(form.email, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.email) }}
+
+        {{ form_label(form.siret) }}
+        {{ form_widget(form.siret, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.siret) }}
+
+        {{ form_label(form.referencebancaire) }}
+        {{ form_widget(form.referencebancaire, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.referencebancaire) }}
+
+    {{ form_label(form.numtel) }}
+    <div class="input-group">
+        {{ form_widget(form.pays, {'attr': {'class': 'form-control col-md-2'}}) }}
+        {{ form_widget(form.numtel, {'attr': {'class': 'form-control col-md-2'}}) }}
+    </div>
+    {{ form_errors(form.numtel) }}
     
-    <hr/>
-    <a class="btn btn-dark" href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
-    <button type="submit" class="btn btn-success">modifier</button>
+        {{ form_label(form.adresse) }}
+        {{ form_widget(form.adresse, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.adresse) }}
+
+        {{ form_label(form.contrat) }}
+        {{ form_widget(form.contrat, {'attr': {'class': 'form-control col-md-4'}}) }}
+        {{ form_errors(form.contrat) }}
+
+        <hr/>
+        <a class="btn btn-dark" href="{{ path('app_client_index') }}">Retour à la liste des clients</a>
+        <button class="btn btn-success">{{ button_label|default('Save') }}</button>
     {{ form_end(form) }}
 
 {% endblock %}

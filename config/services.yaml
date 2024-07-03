@@ -28,3 +28,15 @@ services:
     App\Scheduler\VerifEcheance:
         tags:
             - { name: 'scheduler.task', expression: '0 11 * * *' }
+
+    App\Service\FactureService:
+        arguments:
+            $pdfDirectory: '%kernel.project_dir%/public/uploads/pdf'
+
+    App\Service\VerifPaiementService:
+        arguments:
+            $pdfDirectory: '%pdf_directory%'
+
+    App\Service\CustomerService:
+        autowire: true
+
